@@ -30,13 +30,6 @@ method CALL-ME(|c --> Promise) is hidden-from-backtrace {
         my $ret = await self!execute(|c);
         $!failed = 0;
         CATCH {
-            when X::CircuitBreaker::Opened {
-                Promise.in($!reset-time)
-                    .then: {
-                        $!status = HalfOpened;
-                    }
-                    proceed
-            }
             default {
                 $!failed++;
                 if $!has-default {
@@ -84,6 +77,11 @@ method !execute(|c --> Promise) is hidden-from-backtrace {
                 $!last-fail //= $_;
                 if $!failed >= $!failures or $!status ~~ HalfOpened {
                     $!status = Opened;
+		    Promise.in($!reset-time)
+                        .then: {
+                            $!status = HalfOpened;
+                        }
+	            ;
                 }
                 my $ret = await self!execute(|c);
                 vow.keep: $ret;
