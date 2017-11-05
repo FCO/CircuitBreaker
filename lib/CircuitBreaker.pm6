@@ -13,7 +13,6 @@ has Bool        $!has-default   = False;
 
 has UInt        $.failed    = 0;
 has Exception   $!last-fail;
-has Lock        $!lock     .= new;
 has UInt        $!tries     = 0;
 
 multi method TWEAK(:$default!, |) {
@@ -25,25 +24,25 @@ multi method TWEAK(|) {
 }
 
 method CALL-ME(|c --> Promise) is hidden-from-backtrace {
-    $!tries = 0;
-    start {
-        my $ret;
-	{
-	$ret = await self!execute(|c);
-        $!failed = 0;
-        CATCH {
-            default {
-                $!failed++;
-                if $!has-default {
-                    $ret = $!default;
-                } else {
-                    .rethrow
-                }
-            }
-        }
+	$!tries = 0;
+	start {
+		my $ret;
+		{
+			$ret = await self!execute(|c);
+			$!failed = 0;
+			CATCH {
+				default {
+					$!failed++;
+					if $!has-default {
+						$ret = $!default;
+					} else {
+						.rethrow
+					}
+				}
+			}
+		}
+		$ret
 	}
-        $ret
-    }
 }
 
 method !execute(|c --> Promise) is hidden-from-backtrace {
