@@ -1,0 +1,14 @@
+{
+  "name": "CircuitBreaker",
+  "perl": "v6.*",
+  "scripts": {
+    "test": "zef test ."
+  },
+  "license": "https://opensource.org/licenses/Artistic-2.0",
+  "production": false,
+  "version": "0.0.1",
+  "authors": [
+    "fernando"
+  ],
+  "description": ""
+}
