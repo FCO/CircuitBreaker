@@ -27,7 +27,9 @@ multi method TWEAK(|) {
 method CALL-ME(|c --> Promise) is hidden-from-backtrace {
     $!tries = 0;
     start {
-        my $ret = await self!execute(|c);
+        my $ret;
+	{
+	$ret = await self!execute(|c);
         $!failed = 0;
         CATCH {
             default {
@@ -39,6 +41,7 @@ method CALL-ME(|c --> Promise) is hidden-from-backtrace {
                 }
             }
         }
+	}
         $ret
     }
 }
