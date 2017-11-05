@@ -85,7 +85,8 @@ method !execute(|c --> Promise) is hidden-from-backtrace {
                         }
                     ;
                 }
-                my $ret = await self!execute(|c);
+                my $new = $.clone;
+                my $ret = await $new!execute(|c);
                 vow.keep: $ret;
                 CATCH {
                     when X::CircuitBreaker  { vow.break: $_ }
