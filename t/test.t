@@ -65,5 +65,6 @@ subtest {
         is &cb2.status.key, "Opened", "Circuit had opened";
         is &cb2.failed, $_ + 4, "Its counting the failures";
     }
-}, "Should change status with default response"
+}, "Should change status with default response";
 
+done-testing
