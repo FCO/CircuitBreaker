@@ -1,12 +1,14 @@
 use Test;
 use CircuitBreaker;
+use X::CircuitBreaker::Timeout;
+use X::CircuitBreaker::Opened;
 
 my &cb := CircuitBreaker.new:
     :2retries,
     :3failures,
     :1000timeout,
     :exec(-> Int $times = 1, :$return, :$die {
-        state $num;
+        state $num //= 0;
         do with $return {
             $_
         } orwith $die {
@@ -34,14 +36,15 @@ subtest {
 
 subtest {
     for ^3 {
-        throws-like {await cb :die<Bye>}, X::AdHoc, "It should die";
         is &cb.status.key, "Closed", "Circuit is still closed";
+        throws-like {await cb :die<Bye>}, X::AdHoc, "It should die";
         is &cb.failed, $_ + 1, "Its counting the failures";
     }
 
     for ^3 {
-        throws-like {await cb :die<Bye>}, X::CircuitBreaker::Opened, "It should die";
+		#await cb :die<Bye>;
         is &cb.status.key, "Opened", "Circuit had opened";
+        throws-like {await cb :die<Bye>}, X::CircuitBreaker::Opened, "It should die";
         is &cb.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status";
@@ -55,14 +58,14 @@ my &cb2 := CircuitBreaker.new:
 
 subtest {
     for ^3 {
-        is await(cb2), "default response", "It should return the default response";
         is &cb2.status.key, "Closed", "Circuit is still closed";
+        is await(cb2), "default response", "It should return the default response";
         is &cb2.failed, $_ + 1, "Its counting the failures";
     }
 
     for ^3 {
-        is await(cb2), "default response", "It should return the default response";
         is &cb2.status.key, "Opened", "Circuit had opened";
+        is await(cb2), "default response", "It should return the default response";
         is &cb2.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status with default response";
