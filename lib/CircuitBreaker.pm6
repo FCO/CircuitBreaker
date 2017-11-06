@@ -42,11 +42,11 @@ method CALL-ME(|capture --> Promise) {
                 }
                 whenever start {$executor.execute(capture)} -> $response {
                     $ret = $response;
+                    $!failed ⚛= 0;
+                    $!lock.protect: { $!status = Closed }
                     done
                 }
             }
-            $!failed ⚛= 0;
-            $!lock.protect: { $!status = Closed }
             CATCH {
                 default {
                     $!failed⚛++;
