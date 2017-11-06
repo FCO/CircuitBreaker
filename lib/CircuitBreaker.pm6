@@ -46,11 +46,12 @@ method CALL-ME(|capture --> Promise) {
                 }
             }
             $!failed ⚛= 0;
+            $!lock.protect: { $!status = Closed }
             CATCH {
                 default {
                     $!failed⚛++;
                     if $!failed >= $!failures {
-                        $!status = Opened;
+                        $!lock.protect: { $!status = Opened }
                         Promise.in($!reset-time)
                             .then: {
                                 $!status = HalfOpened
@@ -60,7 +61,7 @@ method CALL-ME(|capture --> Promise) {
                     if self!has-default {
                         $ret = $!default;
                     } else {
-                        $!lock.protect: {$!last-fail = $_}
+                        $!lock.protect: { $!last-fail = $_ }
                         .rethrow
                     }
                 }
