@@ -49,7 +49,14 @@ method CALL-ME(|capture --> Promise) {
             CATCH {
                 default {
                     $!failed⚛++;
-                    $!status = Opened if $!failed >= $!failures;
+                    if $!failed >= $!failures {
+                        $!status = Opened;
+                        Promise.in($!reset-time)
+                            .then: {
+                                $!status = HalfOpened
+                            }
+                        ;
+                    }
                     if self!has-default {
                         $ret = $!default;
                     } else {
