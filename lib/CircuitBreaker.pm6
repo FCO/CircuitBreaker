@@ -54,7 +54,7 @@ method CALL-ME(|capture --> Promise) {
                         $!lock.protect: { $!status = Opened }
                         Promise.in($!reset-time)
                             .then: {
-                                $!status = HalfOpened
+                                $!lock.protect: { $!status = HalfOpened }
                             }
                         ;
                     }
