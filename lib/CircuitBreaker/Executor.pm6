@@ -21,7 +21,8 @@ method execute(Capture \c, UInt :$tries = 0) {
                         default { .rethrow }
                     }
                 } else {
-                    X::CircuitBreaker::NoMoreRetries.new.throw
+                    $orig-exception.rethrow if $!retries == 0;
+                    X::CircuitBreaker::NoMoreRetries.new(:$!retries).throw
                 }
             }
         }

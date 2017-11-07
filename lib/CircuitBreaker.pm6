@@ -52,7 +52,7 @@ method CALL-ME(|capture --> Promise) {
                     $!failed⚛++;
                     if $!failed >= $!failures {
                         $!lock.protect: { $!status = Opened }
-                        Promise.in($!reset-time)
+                        Promise.in($!reset-time / 1000)
                             .then: {
                                 $!lock.protect: { $!status = HalfOpened }
                             }

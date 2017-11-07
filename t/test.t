@@ -1,4 +1,5 @@
 use Test;
+use Test::Scheduler;
 use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::Opened;
@@ -24,9 +25,9 @@ my &cb := CircuitBreaker.new:
 ;
 
 throws-like {await cb}, X::AdHoc,                   "Should die with the 'last-fail'";
-is &cb.failed, 1, "Its counting the filures";
+is &cb.failed, 1, "Its counting the failures";
 throws-like {await cb}, X::CircuitBreaker::Timeout, "Should timeout";
-is &cb.failed, 2, "Its counting the filures";
+is &cb.failed, 2, "Its counting the failures";
 subtest {
     is await(cb),              5,  "Should return the number 5";
     is await(cb 2),            12, "Should return the number 12";
@@ -42,7 +43,6 @@ subtest {
     }
 
     for ^3 {
-		#await cb :die<Bye>;
         is &cb.status.key, "Opened", "Circuit had opened";
         throws-like {await cb :die<Bye>}, X::CircuitBreaker::Opened, "It should die";
         is &cb.failed, $_ + 4, "Its counting the failures";
@@ -69,5 +69,33 @@ subtest {
         is &cb2.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status with default response";
+
+{
+    my $*SCHEDULER = Test::Scheduler.new;
+    my &cb3 := CircuitBreaker.new:
+        :2retries,
+        :3failures,
+        :1000reset-time,
+        :exec(-> $die = True {die "Bye" if $die; ++$})
+    ;
+
+    subtest {
+        for ^3 {
+            is &cb3.status.key, "Closed", "Circuit is still closed";
+            throws-like {await cb3 True}, X::AdHoc, "It should die";
+            is &cb3.failed, $_ + 1, "Its counting the failures";
+        }
+        is &cb3.status.key, "Opened", "Circuit is opened";
+        throws-like {await cb3}, X::CircuitBreaker::Opened, "It should die";
+        $*SCHEDULER.advance-by(1);
+        is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
+        throws-like {await cb3}, X::AdHoc, "It should die";
+        is &cb3.status.key, "Opened", "Circuit is opened again";
+        $*SCHEDULER.advance-by(1);
+        is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
+        is await(cb3 False), 1, "Tried";
+        is &cb3.status.key, "Closed", "Circuit is opened again";
+    }, "Test halfopen";
+}
 
 done-testing
