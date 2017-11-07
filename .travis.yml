@@ -5,5 +5,5 @@ install:
   - rakudobrew build-zef
   - zef install --deps-only .
 script:
-  - PERL6_TEST_META=1 PERL6LIB=$PWD/lib zef test .
+  - zef test .
 sudo: false
