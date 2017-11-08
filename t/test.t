@@ -98,4 +98,10 @@ subtest {
     }, "Test halfopen";
 }
 
+my &cb4 := CircuitBreaker.new:
+    :exec{start start start start start 42}
+;
+
+is await(cb4), 42, "Accept promise inside a promise inside ...";
+
 done-testing

@@ -18,6 +18,9 @@ has Exception   $!last-fail;
 
 has Lock        $!lock         .= new;
 
+multi multi-await(Promise $p)   { multi-await await $p }
+multi multi-await($p)           { $p }
+
 method !has-default {$!default !~~ DefaultNotSet}
 
 method CALL-ME(|capture --> Promise) {
@@ -41,7 +44,7 @@ method CALL-ME(|capture --> Promise) {
                     X::CircuitBreaker::Timeout.new(:$!timeout).throw
                 }
                 whenever start {$executor.execute(capture)} -> $response {
-                    $ret = $response;
+                    $ret = multi-await $response;
                     $!failed ⚛= 0;
                     $!lock.protect: { $!status = Closed }
                     done
