@@ -22,6 +22,9 @@ multi multi-await(Promise $p)   { multi-await await $p }
 multi multi-await($p)           { $p }
 
 method !has-default {$!default !~~ DefaultNotSet}
+method !get-default {
+    multi-await $!default ~~ Code ?? $!default() !! $!default
+}
 
 method CALL-ME(|capture --> Promise) {
     start {
@@ -29,7 +32,7 @@ method CALL-ME(|capture --> Promise) {
         if $!status ~~ Opened {
             $!failed⚛++;
             if self!has-default {
-                $ret = $!default;
+                $ret = self!get-default
             } else {
                 X::CircuitBreaker::Opened.new.throw;
             }
@@ -62,7 +65,7 @@ method CALL-ME(|capture --> Promise) {
                         ;
                     }
                     if self!has-default {
-                        $ret = $!default;
+                        $ret = self!get-default
                     } else {
                         $!lock.protect: { $!last-fail = $_ }
                         .rethrow

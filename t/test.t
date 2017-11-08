@@ -99,9 +99,23 @@ subtest {
 }
 
 my &cb4 := CircuitBreaker.new:
-    :exec{start start start start start 42}
+    :exec{start start start start start {42}}
 ;
 
 is await(cb4), 42, "Accept promise inside a promise inside ...";
+
+my &cb5 := CircuitBreaker.new:
+    :default{13 + 29},
+    :exec{die "Bye"}
+;
+
+is await(cb5), 42, "Accept default as code";
+
+my &cb6 := CircuitBreaker.new:
+    :default{start {13 + 29}},
+    :exec{die "Bye"}
+;
+
+is await(cb6), 42, "Accept default as code returning promise";
 
 done-testing
