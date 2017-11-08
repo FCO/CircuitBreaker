@@ -4,19 +4,21 @@ use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::Opened;
 enum Status <Closed Opened HalfOpened>;
 
-has Status      $.status        = Closed;
-has UInt        $.retries       = 0;
-has UInt        $.failures      = 3;
-has UInt        $.timeout       = 1000;
-has UInt        $.reset-time    = 10000;
+has Status      $.status        is rw = Closed;
+has UInt        $.retries       is rw = 0;
+has UInt        $.failures      is rw = 3;
+has UInt        $.timeout       is rw = 1000;
+has UInt        $.reset-time    is rw = 10000;
+has             $.default       is rw = class DefaultNotSet {};
 has             &.exec;
-has             $.default       = class DefaultNotSet {};
 has Bool        $!has-default   = False;
 
 has atomicint   $.failed        = 0;
 has Exception   $!last-fail;
 
 has Lock        $!lock         .= new;
+
+sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
 multi multi-await(Promise $p)   { multi-await await $p }
 multi multi-await($p)           { $p }

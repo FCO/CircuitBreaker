@@ -118,4 +118,25 @@ my &cb6 := CircuitBreaker.new:
 
 is await(cb6), 42, "Accept default as code returning promise";
 
+isa-ok circuit-breaker({;}), CircuitBreaker, "circuit-breaker function";
+
+my $a = circuit-breaker({;}, :1retries, :1failures, :1timeout, :1reset-time, :1default);
+is $a.retries,      1;
+is $a.failures,     1;
+is $a.timeout,      1;
+is $a.reset-time,   1;
+is $a.default,      1;
+
+$a.retries      =   2;
+$a.failures     =   2;
+$a.timeout      =   2;
+$a.reset-time   =   2;
+$a.default      =   2;
+
+is $a.retries,      2;
+is $a.failures,     2;
+is $a.timeout,      2;
+is $a.reset-time,   2;
+is $a.default,      2;
+
 done-testing

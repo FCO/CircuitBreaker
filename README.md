@@ -3,7 +3,32 @@
 CircuitBreaker
 
 ```
-my &circuit-breaker := CircuitBreaker.new:
+use CircuitBreaker;
+
+my &cbreaker := circuit-breaker {
+    sleep rand * 2;
+    $^data
+}
+
+&cbreaker.retries    = 2;
+&cbreaker.failures   = 3;
+&cbreaker.timeout    = 1000;
+&cbreaker.reset-time = 10000;
+
+my Promise @proms;
+my $counter = 0;
+
+loop {
+    @proms .= grep: Planned;
+    for @proms.elems ..^ 5 {
+        @proms.push: cbreaker($counter++).then: {print "\r{.result}\t\t{@proms.elems}"}
+    }
+    await Promise.anyof: @proms
+}
+```
+
+```
+my &my-circuit-breaker := CircuitBreaker.new:
     :2retries,
     :3failures,
     :1000timeout,
@@ -13,5 +38,5 @@ my &circuit-breaker := CircuitBreaker.new:
     })
 ;
 
-my $response = await circuit-breaker "my", "list". :of<parameters>;
+my $response = await my-circuit-breaker "my", "list". :of<parameters>;
 ```
