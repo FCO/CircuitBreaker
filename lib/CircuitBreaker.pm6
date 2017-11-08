@@ -23,7 +23,7 @@ multi multi-await($p)           { $p }
 
 method !has-default {$!default !~~ DefaultNotSet}
 method !get-default {
-    multi-await $!default ~~ Code ?? $!default() !! $!default
+    multi-await $!default ~~ Callable ?? $!default() !! $!default
 }
 
 method CALL-ME(|capture --> Promise) {
