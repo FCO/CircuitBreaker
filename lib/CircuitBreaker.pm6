@@ -16,7 +16,7 @@ has Lock        $!lock         .= new;
 
 sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
-method mock(::?CLASS:U: $mock = "CircuitBreaker::Mock") {require ::($mock); ::($mock) but True}
+method mock(::?CLASS:U: $mock = "CircuitBreaker::Mock") {require ::($mock); ::($mock)}
 
 method CALL-ME(|capture --> Promise) {
     start {
