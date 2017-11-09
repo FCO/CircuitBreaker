@@ -5,15 +5,17 @@ CircuitBreaker
 ```
 use CircuitBreaker;
 
-my &cbreaker := circuit-breaker {
-    sleep rand * 2;
-    $^data
-}
+CircuitBreaker.config:  # set new defaults
+    :2retries,
+    :3failures,
+    :1000timeout,
+    :10000reset-time
+;
 
-&cbreaker.retries    = 2;
-&cbreaker.failures   = 3;
-&cbreaker.timeout    = 1000;
-&cbreaker.reset-time = 10000;
+my &cbreaker := circuit-breaker :default<ERROR>, -> $data {
+    sleep rand * 2;
+    $data
+}
 
 my Promise @proms;
 my $counter = 0;
@@ -21,14 +23,32 @@ my $counter = 0;
 loop {
     @proms .= grep: Planned;
     for @proms.elems ..^ 5 {
-        @proms.push: cbreaker($counter++).then: {print "\r{.result}\t\t{@proms.elems}"}
+        @proms.push: cbreaker($counter++).then: {printf "\r% 10s => %d", .result, @proms.elems}
     }
     await Promise.anyof: @proms
 }
 ```
 
 ```
-my &my-circuit-breaker := CircuitBreaker.new:
+use CircuitBreaker;
+
+my &cbreaker := circuit-breaker :default<ERROR>, -> $data {
+    sleep rand * 2;
+    $data
+}
+
+&cbreaker.config:   # configure de defined circuitbreaker
+    :2retries,
+    :3failures,
+    :1000timeout,
+    :10000reset-time
+;
+```
+
+```
+use CircuitBreaker;
+
+my &my-circuit-breaker := CircuitBreaker.new:   # create a new object
     :2retries,
     :3failures,
     :1000timeout,

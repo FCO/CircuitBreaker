@@ -18,6 +18,33 @@ has Exception   $!last-fail;
 
 has Lock        $!lock         .= new;
 
+my %defaults = (
+    retries    => 0;
+    failures   => 3;
+    timeout    => 1000;
+    reset-time => 10000;
+);
+
+method new(:&exec!, *%pars) {
+    self.bless: |%defaults, |%pars, :&exec
+}
+
+multi method config(::?CLASS:U: *%pars) {
+    %defaults<retries   > = $_ with %pars<retries   >;
+    %defaults<failures  > = $_ with %pars<failures  >;
+    %defaults<timeout   > = $_ with %pars<timeout   >;
+    %defaults<reset-time> = $_ with %pars<reset-time>;
+    %defaults<default>    = $_ with %pars<default   >;
+}
+
+multi method config(::?CLASS:D: *%pars) {
+    $!retries    = $_ with %pars<retries   >;
+    $!failures   = $_ with %pars<failures  >;
+    $!timeout    = $_ with %pars<timeout   >;
+    $!reset-time = $_ with %pars<reset-time>;
+    $!default    = $_ with %pars<default   >;
+}
+
 sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
 multi multi-await(Promise $p)   { multi-await await $p }

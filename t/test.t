@@ -139,4 +139,34 @@ is $a.timeout,      2;
 is $a.reset-time,   2;
 is $a.default,      2;
 
+$a.config:
+    :3retries,
+    :3failures,
+    :3timeout,
+    :3reset-time,
+    :3default
+;
+
+is $a.retries,      3;
+is $a.failures,     3;
+is $a.timeout,      3;
+is $a.reset-time,   3;
+is $a.default,      3;
+
+CircuitBreaker.config:
+    :4retries,
+    :4failures,
+    :4timeout,
+    :4reset-time,
+    :4default
+;
+
+my $b = circuit-breaker {;}
+
+is $b.retries,      4;
+is $b.failures,     4;
+is $b.timeout,      4;
+is $b.reset-time,   4;
+is $b.default,      4;
+
 done-testing
