@@ -13,4 +13,6 @@ my $*CircuitBreakerMock = CircuitBreaker.mock;
 
 my &cb := get-cbreaker;
 isa-ok &cb, CircuitBreaker::Mock;
-is await(cb), $++ for ^10
+is await(cb), $++ for ^10;
+
+done-testing
