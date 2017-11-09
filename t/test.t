@@ -76,7 +76,7 @@ subtest {
         :2retries,
         :3failures,
         :1000reset-time,
-        :exec(-> $die = True {die "Bye" if $die; ++$})
+        :exec(-> $die = True {state $num //= 0; ++$num; die "Bye" if $die; $num})
     ;
 
     subtest {
@@ -93,7 +93,7 @@ subtest {
         is &cb3.status.key, "Opened", "Circuit is opened again";
         $*SCHEDULER.advance-by(1);
         is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
-        is await(cb3 False), 1, "Tried";
+        is await(cb3 False), 11, "Tried";
         is &cb3.status.key, "Closed", "Circuit is opened again";
     }, "Test halfopen";
 }
