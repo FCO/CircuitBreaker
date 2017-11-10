@@ -49,10 +49,10 @@ class Response {
         #        or none($times, $once, $twice).defined
         #;
 
-        if    $never    { return 0      }
-        elsif $once     { return 1      }
-        elsif $twice    { return 2      }
-        with  $times    { return $times }
+        if     $never    { return 0      }
+        elsif  $once     { return 1      }
+        elsif  $twice    { return 2      }
+        orwith $times    { return $times }
         1
     }
 
