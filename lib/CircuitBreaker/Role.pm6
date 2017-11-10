@@ -22,7 +22,7 @@ my %defaults = (
 );
 
 method new(:&exec!, *%pars) {
-    ($*CircuitBreakerMock !~~ Nil ?? $*CircuitBreakerMock !! self).bless: |%defaults, |%pars, :&exec
+    ($*CircuitBreakerMock !~~ Nil and $*CircuitBreakerMock ~~ CircuitBreaker::Role ?? $*CircuitBreakerMock !! self).bless: |%defaults, |%pars, :&exec
 }
 
 method !has-default {$!default !~~ CircuitBreaker::DefaultNotSet}
