@@ -3,6 +3,7 @@ use CircuitBreaker::Status;
 use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Utils;
 
+has Str         $.name          is rw;
 has Status      $.status        is rw = Closed;
 has UInt        $.retries       is rw = 0;
 has UInt        $.failures      is rw = 3;
@@ -30,6 +31,7 @@ method !get-default {
 }
 
 multi method config(::?CLASS:U: *%pars) {
+    %defaults<name      > = $_ with %pars<name      >;
     %defaults<retries   > = $_ with %pars<retries   >;
     %defaults<failures  > = $_ with %pars<failures  >;
     %defaults<timeout   > = $_ with %pars<timeout   >;
@@ -38,6 +40,7 @@ multi method config(::?CLASS:U: *%pars) {
 }
 
 multi method config(::?CLASS:D: *%pars) {
+    $!name       = $_ with %pars<name      >;
     $!retries    = $_ with %pars<retries   >;
     $!failures   = $_ with %pars<failures  >;
     $!timeout    = $_ with %pars<timeout   >;

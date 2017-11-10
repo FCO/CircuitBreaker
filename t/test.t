@@ -5,6 +5,7 @@ use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::Opened;
 
 my &cb := CircuitBreaker.new:
+    :name<bla>,
     :2retries,
     :3failures,
     :1000timeout,
@@ -50,6 +51,7 @@ subtest {
 }, "Should change status";
 
 my &cb2 := CircuitBreaker.new:
+    :name<ble>,
     :2retries,
     :3failures,
     :default("default response"),
@@ -73,6 +75,7 @@ subtest {
 {
     my $*SCHEDULER = Test::Scheduler.new;
     my &cb3 := CircuitBreaker.new:
+        :name<bli>,
         :2retries,
         :3failures,
         :1000reset-time,
