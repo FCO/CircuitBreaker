@@ -4,6 +4,8 @@ use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::Opened;
 
+plan 32;
+
 my &cb := CircuitBreaker.new:
     :name<bla>,
     :2retries,

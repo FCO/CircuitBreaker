@@ -6,6 +6,7 @@ use X::CircuitBreaker::Opened;
 use CircuitBreaker::Status;
 use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Utils;
+use CircuitBreaker::Mock::Router;
 
 has Bool        $!has-default   = False;
 
@@ -16,7 +17,7 @@ has Lock        $!lock         .= new;
 
 sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
-method mock(::?CLASS:U: $mock = "CircuitBreaker::Mock") {require ::($mock); ::($mock)}
+method mock-router(::?CLASS:U:) {$ //= CircuitBreaker::Mock::Router.new}
 
 method CALL-ME(|capture --> Promise) {
     start {

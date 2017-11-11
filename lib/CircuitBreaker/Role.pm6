@@ -22,7 +22,11 @@ my %defaults = (
 );
 
 method new(:&exec!, *%pars) {
-    ($*CircuitBreakerMock !~~ Nil ?? $*CircuitBreakerMock !! self).bless: |%defaults, |%pars, :&exec
+    do if DYNAMIC::<$*CircuitBreakerMock> !~~ Nil {
+        $ = $*CircuitBreakerMock.class
+    } else {
+        self
+    }.bless: |%defaults, |%pars, :&exec
 }
 
 method !has-default {$!default !~~ CircuitBreaker::DefaultNotSet}
@@ -36,7 +40,7 @@ multi method config(::?CLASS:U: *%pars) {
     %defaults<failures  > = $_ with %pars<failures  >;
     %defaults<timeout   > = $_ with %pars<timeout   >;
     %defaults<reset-time> = $_ with %pars<reset-time>;
-    %defaults<default>    = $_ with %pars<default   >;
+    %defaults<default   > = $_ with %pars<default   >;
 }
 
 multi method config(::?CLASS:D: *%pars) {
