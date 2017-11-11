@@ -24,7 +24,8 @@ method next {
     $response
 }
 
-method Bool {@!responses.elems > 0}
+multi method Bool(::?CLASS:D:) {@!responses.elems > 0}
+multi method Bool(::?CLASS:U:) {False}
 
 method gist {
     "route: [\n{@!responses>>.gist>>.indent(5).join: "\n"}\n]"
