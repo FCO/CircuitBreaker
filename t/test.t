@@ -4,7 +4,7 @@ use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::Opened;
 
-plan 32;
+plan 33;
 
 my &cb := CircuitBreaker.new:
     :name<bla>,
@@ -174,4 +174,15 @@ is $b.timeout,      4;
 is $b.reset-time,   4;
 is $b.default,      4;
 
-done-testing
+subtest {
+    sub bla is circuit-breaker {;}
+    isa-ok &bla.circuit-breaker, CircuitBreaker;
+
+    sub ble is circuit-breaker{:5retries,:5failures,:5timeout,:5reset-time,:5default} {;}
+    isa-ok &ble.circuit-breaker, CircuitBreaker;
+    is &ble.circuit-breaker.retries,      5;
+    is &ble.circuit-breaker.failures,     5;
+    is &ble.circuit-breaker.timeout,      5;
+    is &ble.circuit-breaker.reset-time,   5;
+    is &ble.circuit-breaker.default,      5;
+}, "trait";

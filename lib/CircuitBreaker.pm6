@@ -16,6 +16,20 @@ has Exception   $!last-fail;
 
 has Lock        $!lock         .= new;
 
+multi trait_mod:<is>(Routine $r, Bool :$circuit-breaker!) is export {
+    trait_mod:<is>($r, :circuit-breaker{})
+}
+
+multi trait_mod:<is>(Routine $r, :%circuit-breaker!) is export {
+    my $a = $r.clone;
+    my &cb := CircuitBreaker.new(:exec($a), :name($a.name), |%circuit-breaker);
+    $r.wrap: -> |c {
+        cb(|c)
+    }
+    $r does role CircuitBreaker {has $.circuit-breaker = &cb}
+}
+
+
 sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
 method mock-router(::?CLASS:U:) {$ //= CircuitBreaker::Mock::Router.new}
