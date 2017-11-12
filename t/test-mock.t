@@ -31,3 +31,12 @@ throws-like { await(cb) }, X::CircuitBreaker::Timeout;
 
 $*CircuitBreakerMock.test.should-never-be-called;
 throws-like { await(cb) }, X::CircuitBreakerMock::ShouldNeverBeCalled;
+
+todo "it should fail...";
+subtest {
+    $*CircuitBreakerMock.test2.should-timeout(:twice);
+    $*CircuitBreakerMock.test2.should-run(:3times);
+    my &cb2 := circuit-breaker :name<test2>, {;};
+    await cb2;
+    $*CircuitBreakerMock.verify;
+}

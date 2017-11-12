@@ -2,9 +2,10 @@ unit class CircuitBreaker::Mock::Response;
 use X::CircuitBreaker::Timeout;
 
 has Str         $.wtd;
-has             $.parent    is required;
-has             $.times     is rw;
-has Exception   $.exception = Nil;
+has             $.parent        is required;
+has             $.times         is rw       = Inf;
+has             $.orig-times                = $!times;
+has Exception   $.exception                 = Nil;
 
 method die {
     .throw with $!exception
@@ -21,34 +22,34 @@ sub times(Int :$times, Bool :$once, Bool :$twice, Bool :$never, Bool :$always, B
     do if  $never    { 0      }
     elsif  $once     { 1      }
     elsif  $twice    { 2      }
-    elsif  $always   { 2      }
-    elsif  $forever  { 2      }
+    elsif  $always   { Inf    }
+    elsif  $forever  { Inf    }
     orwith $times    { $times }
     else             { Inf    }
 }
 
 method should-never-be-called {
-    $!wtd   = "never be called";
-    $!times = 0;
+    $!wtd           = "never be called";
+    $!orig-times    = $!times = 0;
     $!parent
 }
 
-method should-run {
-    $!wtd   = "run";
-    $!times = Inf;
+method should-run(*%times) {
+    $!wtd           = "run";
+    $!orig-times    = $!times = $_ with times(|%times);
     $!parent
 }
 
 method should-timeout(*%times) {
-    $!wtd       = "timeout";
-    $!times     = $_ with times(|%times);
-    $!exception = X::CircuitBreaker::Timeout.new(timeout => 0);
+    $!wtd           = "timeout";
+    $!orig-times    = $!times     = $_ with times(|%times);
+    $!exception     = X::CircuitBreaker::Timeout.new(timeout => 0);
     $!parent
 }
 
 method should-die-with(Exception $!exception, *%times) {
-    $!wtd   = "die with";
-    $!times = $_ with times(|%times);;
+    $!wtd           = "die with";
+    $!orig-times    = $!times = $_ with times(|%times);;
     $!parent
 }
 

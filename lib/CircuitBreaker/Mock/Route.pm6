@@ -1,7 +1,7 @@
 unit class CircuitBreaker::Mock::Route;
 use CircuitBreaker::Mock::Response;
 
-has CircuitBreaker::Mock::Response  @!responses;
+has CircuitBreaker::Mock::Response  @.responses;
 has                                 $.router;
 
 method TWEAK(|) {
