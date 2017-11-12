@@ -7,6 +7,7 @@ use CircuitBreaker::Status;
 use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Utils;
 use CircuitBreaker::Mock::Router;
+use experimental :macros;
 
 has Bool        $!has-default   = False;
 
@@ -18,6 +19,12 @@ has Lock        $!lock         .= new;
 sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
 
 method mock-router(::?CLASS:U:) {$ //= CircuitBreaker::Mock::Router.new}
+
+macro circuit-breaker-mock is export {
+    quasi {
+        $*CircuitBreakerMock //= CircuitBreaker::Mock::Router.new
+    }
+}
 
 method CALL-ME(|capture --> Promise) {
     start {
