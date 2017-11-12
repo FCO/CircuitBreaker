@@ -4,7 +4,7 @@ use CircuitBreaker;
 use CircuitBreaker::Mock;
 use X::CircuitBreakerMock::ShouldNeverBeCalled;
 
-plan 17;
+plan 18;
 
 isa-ok CircuitBreaker.mock-router, CircuitBreaker::Mock::Router;
 
