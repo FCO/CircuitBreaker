@@ -1,92 +1,62 @@
-use CircuitBreaker::Role;
-unit class CircuitBreaker does CircuitBreaker::Role;
+unit role CircuitBreaker;
 use CircuitBreaker::Executor;
-use X::CircuitBreaker::Timeout;
-use X::CircuitBreaker::Opened;
-use CircuitBreaker::Status;
-use CircuitBreaker::DefaultNotSet;
-use CircuitBreaker::Utils;
-use CircuitBreaker::Mock::Router;
-use experimental :macros;
+use CircuitBreaker::Config;
+use CircuitBreaker::Data;
+use X::CircuitBreaker::TooManyRequests;
 
-has Bool        $!has-default   = False;
+my %cache{Capture};
 
-has atomicint   $.failed        = 0;
-has Exception   $!last-fail;
+has Supplier                    $!control  .= new;
+has Supplier                    $.supplier .= new;
+has Supply                      $.supply    = $!supplier.Supply;
+has Supplier                    $.bleed    .= new;
+has Supplier                    $.status   .= new;
+has Channel                     $.channel;
+has UInt                        $.threads   = 1;
+has CircuitBreaker::Executor    @.executors;
+has                             &.exec;
+has CircuitBreaker::Config      $.config   .= new:
+    :name(self.name),
+    :$!control,
+    :bleed($!bleed.Supply)
+;
 
-has Lock        $!lock         .= new;
-
-multi trait_mod:<is>(Routine $r, Bool :$circuit-breaker!) is export {
-    trait_mod:<is>($r, :circuit-breaker{})
-}
-
-multi trait_mod:<is>(Routine $r, :%circuit-breaker!) is export {
-    my $a = $r.clone;
-    my &cb := CircuitBreaker.new(:exec($a), :name($a.name), |%circuit-breaker);
-    $r.wrap: -> |c {
-        cb(|c)
+method compose(&!exec) {
+    start react whenever $!bleed {
+        .response.break: X::CircuitBreaker::TooManyRequests.new
     }
-    $r does role CircuitBreaker {has $.circuit-breaker = &cb}
-}
-
-
-sub circuit-breaker(&exec, *%pars) is export {CircuitBreaker.new: :&exec, |%pars}
-
-method mock-router(::?CLASS:U:) {$ //= CircuitBreaker::Mock::Router.new}
-
-macro circuit-breaker-mock is export {
-    quasi {
-        $*CircuitBreakerMock //= CircuitBreaker::Mock::Router.new
-    }
-}
-
-method CALL-ME(|capture --> Promise) {
-    start {
-        my $ret;
-        if $!status ~~ Opened {
-            $!failed⚛++;
-            if self!has-default {
-                $ret = self!get-default
-            } else {
-                X::CircuitBreaker::Opened.new.throw;
-            }
-        } else {
-            my $retries = $!status ~~ HalfOpened ?? 0 !! $!retries;
-            my $executor = CircuitBreaker::Executor.new:
-                :$retries,
+    $!channel = $!supply
+        .throttle(
+            $!config.reqps - 1, 1,
+            :$!control,
+            :$!status,
+            :$!bleed,
+            :1vent-at
+        )
+        .Channel
+    ;
+    for ^$!threads {
+        start {
+            my $ex = CircuitBreaker::Executor.new(
+                :$!channel,
+                :$!config,
                 :&!exec
-            ;
-            react {
-                whenever Promise.in($!timeout / 1000) {
-                    X::CircuitBreaker::Timeout.new(:$!timeout).throw
-                }
-                whenever start {$executor.execute(capture)} -> $response {
-                    $ret = multi-await $response;
-                    $!failed ⚛= 0;
-                    $!lock.protect: { $!status = Closed }
-                    done
-                }
-            }
-            CATCH {
-                default {
-                    $!failed⚛++;
-                    if $!failed >= $!failures {
-                        $!lock.protect: { $!status = Opened }
-                        Promise.in($!reset-time / 1000)
-                            .then: {
-                                $!lock.protect: { $!status = HalfOpened }
-                            }
-                        ;
-                    }
-                    if self!has-default {
-                        $ret = self!get-default
-                    } else {
-                        $!lock.protect: { $!last-fail = $_ }
-                        .rethrow
-                    }
-                }
-            }
+            );
+            @!executors.push: $ex;
+            $ex.start
         }
-        $ret
     }
+}
+
+method CALL-ME(|c) {
+    my Promise $p .= new;
+    $!supplier.emit: CircuitBreaker::Data.new: :capture(c), :response($p.vow);
+    $p
+}
+
+multi trait_mod:<is>(Routine $r, :$circuit-breaker!) is export {
+    my &clone = $r.clone;
+    $r does CircuitBreaker;
+    $r.compose: &clone;
+    $r
 }
