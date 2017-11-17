@@ -12,10 +12,10 @@ has Supply                      $.supply    = $!supplier.Supply;
 has Supplier                    $.bleed    .= new;
 has Supplier                    $.status   .= new;
 has Channel                     $.channel;
-has UInt                        $.threads   = 1;
 has CircuitBreaker::Executor    @.executors;
 has                             &.exec;
 has CircuitBreaker::Config      $.config   .= new:
+    :circuit-breaker(self),
     :name(self.name),
     :$!control,
     :bleed($!bleed.Supply)
@@ -35,15 +35,26 @@ method compose(&!exec) {
         )
         .Channel
     ;
-    for ^$!threads {
-        start {
-            my $ex = CircuitBreaker::Executor.new(
-                :$!channel,
-                :$!config,
-                :&!exec
-            );
-            @!executors.push: $ex;
-            $ex.start
+
+    $.fix-threads($!config.threads)
+}
+
+method fix-threads(UInt $threads) {
+    if $threads > @!executors.elems {
+        for @!executors.elems ..^ $threads {
+            start {
+                my $ex = CircuitBreaker::Executor.new(
+                    :$!channel,
+                    :$!config,
+                    :&!exec
+                );
+                @!executors.push: $ex;
+                $ex.start
+            }
+        }
+    } elsif $threads < @!executors.elems {
+        for @!executors.splice: $threads {
+            .stop
         }
     }
 }
