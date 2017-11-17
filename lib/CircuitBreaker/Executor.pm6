@@ -25,7 +25,11 @@ method start {
                 $data.response.break: X::CircuitBreaker::ShortCircuited.new;
             } else {
                 my $retries = $!config.retries;
-                my $r = $!execution.execute: :retries($retries), $data.capture;
+                my $r = $!execution.execute:
+                    :retries($retries),
+                    :timeout($!config.timeout),
+                    $data.capture,
+                ;
                 $data.response.keep: $r;
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
