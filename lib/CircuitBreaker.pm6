@@ -2,6 +2,7 @@ unit role CircuitBreaker;
 use CircuitBreaker::Executor;
 use CircuitBreaker::Config;
 use CircuitBreaker::Data;
+use CircuitBreaker::Metric;
 use X::CircuitBreaker::TooManyRequests;
 
 my %cache{Capture};
@@ -23,6 +24,7 @@ has CircuitBreaker::Config      $.config   .= new:
 
 method compose(&!exec) {
     start react whenever $!bleed {
+        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1rejections;
         .response.break: X::CircuitBreaker::TooManyRequests.new
     }
     $!channel = $!supply

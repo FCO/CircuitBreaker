@@ -1,6 +1,7 @@
 unit class CircuitBreaker::Config;
 use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Status;
+use CircuitBreaker::Metric;
 
 my %cache;
 
@@ -13,11 +14,22 @@ has UInt        $.reset-time        is rw = 10000;
 has             $.default           is rw = CircuitBreaker::DefaultNotSet;
 has UInt        $.reqps             is rw = 100;
 has UInt        $.threads           is rw = 1;
+has             $.circuit-breaker   is required;
 has Supplier    $.control           is required;
 has Supply      $.bleed             is required;
-has             $.circuit-breaker   is required;
+has Supplier    $.metric-emiter          .= new;
+has Supply      $.metrics;
 
-method TWEAK(|) {%cache{$!name} = self}
+method TWEAK(|) {
+    %cache{$!name} = self;
+    $!metrics = Supply.merge(
+        $!metric-emiter.Supply,
+        Supply.interval(1).map: { CircuitBreaker::Metric }
+    )
+    .produce: -> $agg, $metric {
+        $agg.add: $metric
+    }
+}
 
 method cache(::?CLASS:U:) {%cache}
 

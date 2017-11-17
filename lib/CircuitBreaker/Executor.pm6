@@ -3,6 +3,7 @@ use X::CircuitBreaker::ShortCircuited;
 use CircuitBreaker::Execution;
 use CircuitBreaker::Status;
 use CircuitBreaker::Config;
+use CircuitBreaker::Metric;
 
 has Channel                     $.channel is required;
 has CircuitBreaker::Config      $.config  is required;
@@ -26,8 +27,10 @@ method start {
                 my $retries = $!config.retries;
                 my $r = $!execution.execute: :retries($retries), $data.capture;
                 $data.response.keep: $r;
+                $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
                     default {
+                        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
                         $data.response.break: $_
                     }
                 }
