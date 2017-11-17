@@ -63,6 +63,7 @@ method fix-threads(UInt $threads) {
 
 method CALL-ME(|c) {
     my Promise $p .= new;
+    $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1emit;
     $!supplier.emit: CircuitBreaker::Data.new: :capture(c), :response($p.vow);
     $p
 }

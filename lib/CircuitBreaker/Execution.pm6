@@ -12,7 +12,8 @@ method execute(Capture \c, :$retries = 0, :$timeout = 1000) {
         }
 
         whenever start { self!run(c, :$retries) } -> $response {
-            $ret = $response
+            $ret = $response;
+            done
         }
     }
     $ret
