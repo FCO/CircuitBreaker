@@ -19,10 +19,11 @@ has Supplier    $.control           is required;
 has Supply      $.bleed             is required;
 has Supplier    $.metric-emiter          .= new;
 has Supply      $.metrics;
+has Scheduler   $.scheduler               = $*SCHEDULER;
 
 method TWEAK(|) {
     %cache{$!name} = self;
-    $!metrics = Supply.merge(
+    $!metrics = Supply.merge(:$!scheduler,
         $!metric-emiter.Supply,
         Supply.interval(1).map: { CircuitBreaker::Metric }
     )
@@ -54,5 +55,18 @@ method threads is rw {
         STORE => method ($v)    {
             &cbreaker.fix-threads: $threads;
             $threads = $v
+        }
+}
+
+method scheduler is rw {
+    my $scheduler := $!scheduler;
+    my $threads   := $!threads;
+    my &cbreaker  := $!circuit-breaker;
+    Proxy.new:
+        FETCH => method ()      {$scheduler},
+        STORE => method ($v)    {
+            &cbreaker.fix-threads: $threads;
+            $threads = $v;
+            $scheduler
         }
 }

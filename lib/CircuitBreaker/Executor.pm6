@@ -26,6 +26,7 @@ method start {
             } else {
                 my $retries = $!config.retries;
                 my $r = $!execution.execute:
+                    :scheduler($!config.scheduler),
                     :retries($retries),
                     :timeout($!config.timeout),
                     $data.capture,
@@ -34,7 +35,7 @@ method start {
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
                     default {
-                        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
+                        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :3failures;
                         $data.response.break: $_
                     }
                 }

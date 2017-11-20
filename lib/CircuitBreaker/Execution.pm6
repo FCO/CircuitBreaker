@@ -3,15 +3,16 @@ use X::CircuitBreaker::Timeout;
 
 has &.exec is required;
 
-method execute(Capture \c, :$retries = 0, :$timeout = 1000) {
+method execute(Capture \c, :$retries = 0, :$timeout = 1000, Scheduler :$scheduler = $*SCHEDULER) {
     my $ret;
+    my $prom = Promise.start: { self!run(c, :$retries) }, :$scheduler;
     react {
         whenever Promise.in: $timeout {
             X::CircuitBreaker::Timeout.new.throw;
             done
         }
 
-        whenever start { self!run(c, :$retries) } -> $response {
+        whenever $prom -> $response {
             $ret = $response;
             done
         }
@@ -26,7 +27,7 @@ method !run(Capture \c, :$retries) {
         CATCH {
             default {
                 if $retries > 0 {
-                    $ret = $.execute :retries($retries - 1), c
+                    $ret = self!run :retries($retries - 1), c
                 } else {
                     .rethrow
                 }

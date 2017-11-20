@@ -15,20 +15,25 @@ has Supplier                    $.status   .= new;
 has Channel                     $.channel;
 has CircuitBreaker::Executor    @.executors;
 has                             &.exec;
+has Scheduler                   $.scheduler = $*SCHEDULER;
 has CircuitBreaker::Config      $.config   .= new:
     :circuit-breaker(self),
     :name(self.name),
     :$!control,
-    :bleed($!bleed.Supply)
+    :bleed($!bleed.Supply),
+    :$!scheduler
 ;
 
 method compose(&!exec) {
-    start react whenever $!bleed {
-        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1rejections;
-        .response.break: X::CircuitBreaker::TooManyRequests.new
-    }
+    Promise.start: {
+        react whenever $!bleed {
+            $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1rejections;
+            .response.break: X::CircuitBreaker::TooManyRequests.new
+        }
+    }, :$!scheduler;
     $!channel = $!supply
         .throttle(
+            :$!scheduler,
             $!config.reqps - 1, 1,
             :$!control,
             :$!status,
@@ -44,7 +49,7 @@ method compose(&!exec) {
 method fix-threads(UInt $threads) {
     if $threads > @!executors.elems {
         for @!executors.elems ..^ $threads {
-            start {
+            Promise.start: {
                 my $ex = CircuitBreaker::Executor.new(
                     :$!channel,
                     :$!config,
@@ -52,11 +57,25 @@ method fix-threads(UInt $threads) {
                 );
                 @!executors.push: $ex;
                 $ex.start
-            }
+            }, $!scheduler;
         }
     } elsif $threads < @!executors.elems {
         for @!executors.splice: $threads {
             .stop
+        }
+    } elsif $!scheduler !=== $!config.scheduler {
+        $!scheduler = $!config.scheduler;
+        for @!executors.splice {
+            Promise.start: {
+                my $ex = CircuitBreaker::Executor.new(
+                    :$!channel,
+                    :$!config,
+                    :&!exec
+                );
+                @!executors.push: $ex;
+                $ex.start
+            }, $!scheduler;
+            .stop;
         }
     }
 }
