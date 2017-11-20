@@ -66,7 +66,6 @@ method scheduler is rw {
         FETCH => method ()      {$scheduler},
         STORE => method ($v)    {
             &cbreaker.fix-threads: $threads;
-            $threads = $v;
             $scheduler
         }
 }
