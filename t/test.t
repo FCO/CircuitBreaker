@@ -2,7 +2,7 @@ use Test;
 use Test::Scheduler;
 use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
-use X::CircuitBreaker::Opened;
+use X::CircuitBreaker::ShortCircuited;
 
 plan 33;
 
@@ -47,7 +47,7 @@ subtest {
 
     for ^3 {
         is &cb.status.key, "Opened", "Circuit had opened";
-        throws-like {await cb :die<Bye>}, X::CircuitBreaker::Opened, "It should die";
+        throws-like {await cb :die<Bye>}, X::CircuitBreaker::ShortCircuited, "It should die";
         is &cb.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status";
@@ -91,7 +91,7 @@ subtest {
             is &cb3.failed, $_ + 1, "Its counting the failures";
         }
         is &cb3.status.key, "Opened", "Circuit is opened";
-        throws-like {await cb3}, X::CircuitBreaker::Opened, "It should die";
+        throws-like {await cb3}, X::CircuitBreaker::ShortCircuited, "It should die";
         $*SCHEDULER.advance-by(1);
         is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
         throws-like {await cb3}, X::AdHoc, "It should die";

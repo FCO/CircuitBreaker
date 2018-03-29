@@ -27,7 +27,7 @@
     "X::CircuitBreakerMock::ShouldNeverBeCalled"    : "lib/X/CircuitBreakerMock/ShouldNeverBeCalled.pm6",
     "X::CircuitBreaker"                             : "lib/X/CircuitBreaker.pm6",
     "X::CircuitBreaker::Timeout"                    : "lib/X/CircuitBreaker/Timeout.pm6",
-    "X::CircuitBreaker::Opened"                     : "lib/X/CircuitBreaker/Opened.pm6",
+    "X::CircuitBreaker::ShortCircuited.pm6"         : "lib/X/CircuitBreaker/ShortCircuited.pm6",
     "X::CircuitBreaker::NoMoreRetries"              : "lib/X/CircuitBreaker/NoMoreRetries.pm6"
   },
   "description": ""
