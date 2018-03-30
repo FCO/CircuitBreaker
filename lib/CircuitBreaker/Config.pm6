@@ -5,7 +5,6 @@ use CircuitBreaker::Metric;
 
 my %cache;
 
-has Str         $.name              is rw;
 has Status      $.status            is rw = Closed;
 has UInt        $.retries           is rw = 0;
 has UInt        $.failures          is rw = 3;
@@ -15,14 +14,13 @@ has             $.default           is rw = CircuitBreaker::DefaultNotSet;
 has UInt        $.reqps             is rw = 100;
 has UInt        $.threads           is rw = 1;
 has             $.circuit-breaker   is required;
-has Supplier    $.control           is required;
+has Supplier    $.control                .= new;
 has Supply      $.bleed             is required;
 has Supplier    $.metric-emiter          .= new;
 has Supply      $.metrics;
 has Scheduler   $.scheduler               = $*SCHEDULER;
 
 method TWEAK(|) {
-    %cache{$!name} = self;
     $!metrics = Supply.merge(:$!scheduler,
         $!metric-emiter.Supply,
         Supply.interval(1).map: { CircuitBreaker::Metric }

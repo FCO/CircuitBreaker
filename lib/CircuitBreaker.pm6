@@ -18,7 +18,6 @@ has                             &.exec;
 has Scheduler                   $.scheduler = $*SCHEDULER;
 has CircuitBreaker::Config      $.config   .= new:
     :circuit-breaker(self),
-    :name(self.name),
     :$!control,
     :bleed($!bleed.Supply),
     :$!scheduler
@@ -87,9 +86,23 @@ method CALL-ME(|c) {
     $p
 }
 
-multi trait_mod:<is>(Routine $r, :$circuit-breaker!) is export {
+multi trait_mod:<is>(Routine $r, Bool :$circuit-breaker!) is export {
     my &clone = $r.clone;
     $r does CircuitBreaker;
     $r.compose: &clone;
     $r
 }
+
+multi trait_mod:<is>(Routine $r, :%circuit-breaker!) is export {
+    my &clone = $r.clone;
+    $r does CircuitBreaker;
+    $r.compose: &clone;
+    for %circuit-breaker.kv -> $key, $value {
+        given $r.config {
+            ."$key"() = $value
+        }
+    }
+    $r
+}
+
+sub circuit-breaker(&sub, *%circuit-breaker) is export { trait_mod:<is>(&sub, :%circuit-breaker) }
