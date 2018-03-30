@@ -38,13 +38,13 @@ subtest {
 
 subtest {
     for ^3 {
-		#is &cb.status.key, "Closed", "Circuit is still closed";
+		is &cb.config.status.key, "Closed", "Circuit is still closed";
         throws-like {await cb :die<Bye>}, X::AdHoc, :message<Bye>, "It should die";
 		#is &cb.failed, $_ + 1, "Its counting the failures";
     }
 
     for ^3 {
-		#is &cb.status.key, "Opened", "Circuit had opened";
+		is &cb.config.status.key, "Opened", "Circuit had opened";
         throws-like {await cb :die<Bye>}, X::CircuitBreaker::ShortCircuited, "It should die";
 		#is &cb.failed, $_ + 4, "Its counting the failures";
     }

@@ -21,12 +21,32 @@ has Supply      $.metrics;
 has Scheduler   $.scheduler               = $*SCHEDULER;
 
 method TWEAK(|) {
-    $!metrics = Supply.merge(:$!scheduler,
+    $!metrics = Supply.merge(
         $!metric-emiter.Supply,
-        Supply.interval(1).map: { CircuitBreaker::Metric }
+        Supply.interval(1).map({ CircuitBreaker::Metric }),
+        :$!scheduler,
     )
     .produce: -> $agg, $metric {
         $agg.add: $metric
+    }
+
+    start react whenever $!metrics {
+        CATCH {
+            default {
+                .say
+            }
+        }
+        say ">>>>>> {.perl} {.failures}";
+        .note
+    }
+    start react whenever $!metrics.grep: { .failures > $!failures } {
+        CATCH {
+            default {
+                .say
+            }
+        }
+        .note;
+        $!status = Opened
     }
 }
 
