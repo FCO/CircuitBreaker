@@ -32,11 +32,9 @@ method start {
                     $data.capture,
                 ;
                 $data.response.keep: $r;
-                note "EMIT!!!!!!!";
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
                     default {
-                        note "EMIT!!!!!!!";
                         $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
                         $data.response.break: $_
                     }

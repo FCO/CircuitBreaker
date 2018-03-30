@@ -11,18 +11,18 @@ sub cb(Int $times = 1, :$return, :$die) is circuit-breaker{
     :3failures,
     :1000timeout,
 } {
-	state $num //= 0;
-	do with $return {
-		$_
-	} orwith $die {
-		die $die
-	} else {
-		do given ++$num {
-			when 1 .. 3   { die "Deu ruim!!!" }
-			when 4        { sleep 2 }
-			default       { $_ * $times }
-		}
-	}
+    state $num //= 0;
+    do with $return {
+        $_
+    } orwith $die {
+        die $die
+    } else {
+        do given ++$num {
+            when 1 .. 3   { die "Deu ruim!!!" }
+            when 4        { sleep 2 }
+            default       { $_ * $times }
+        }
+    }
 }
 
 throws-like {await cb}, X::AdHoc, :message("Deu ruim!!!"), "Should die with the 'last-fail'";
@@ -38,15 +38,15 @@ subtest {
 
 subtest {
     for ^3 {
-		is &cb.config.status.key, "Closed", "Circuit is still closed";
+        is &cb.config.status.key, "Closed", "Circuit is still closed";
         throws-like {await cb :die<Bye>}, X::AdHoc, :message<Bye>, "It should die";
-		#is &cb.failed, $_ + 1, "Its counting the failures";
+        #is &cb.failed, $_ + 1, "Its counting the failures";
     }
 
     for ^3 {
-		is &cb.config.status.key, "Opened", "Circuit had opened";
+        is &cb.config.status.key, "Opened", "Circuit had opened";
         throws-like {await cb :die<Bye>}, X::CircuitBreaker::ShortCircuited, "It should die";
-		#is &cb.failed, $_ + 4, "Its counting the failures";
+        #is &cb.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status";
 
@@ -58,15 +58,15 @@ sub cb2 is circuit-breaker{
 
 subtest {
     for ^3 {
-        is &cb2.status.key, "Closed", "Circuit is still closed";
+        is &cb2.config.status.key, "Closed", "Circuit is still closed";
         is await(cb2), "default response", "It should return the default response";
-        is &cb2.failed, $_ + 1, "Its counting the failures";
+        #is &cb2.failed, $_ + 1, "Its counting the failures";
     }
 
     for ^3 {
-        is &cb2.status.key, "Opened", "Circuit had opened";
+        is &cb2.config.status.key, "Opened", "Circuit had opened";
         is await(cb2), "default response", "It should return the default response";
-        is &cb2.failed, $_ + 4, "Its counting the failures";
+        #is &cb2.failed, $_ + 4, "Its counting the failures";
     }
 }, "Should change status with default response";
 
@@ -76,7 +76,7 @@ subtest {
         :2retries,
         :3failures,
         :1000reset-time,
-	} {state $num //= 0; ++$num; die "Bye" if $die; $num}
+    } {state $num //= 0; ++$num; die "Bye" if $die; $num}
 
     subtest {
         for ^3 {

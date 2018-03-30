@@ -29,25 +29,6 @@ method TWEAK(|) {
     .produce: -> $agg, $metric {
         $agg.add: $metric
     }
-
-    start react whenever $!metrics {
-        CATCH {
-            default {
-                .say
-            }
-        }
-        say ">>>>>> {.perl} {.failures}";
-        .note
-    }
-    start react whenever $!metrics.grep: { .failures > $!failures } {
-        CATCH {
-            default {
-                .say
-            }
-        }
-        .note;
-        $!status = Opened
-    }
 }
 
 method cache(::?CLASS:U:) {%cache}

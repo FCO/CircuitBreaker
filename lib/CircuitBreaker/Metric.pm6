@@ -22,7 +22,6 @@ multi method add(::?CLASS:D: ::?CLASS:D $_) {
             $meth => self."$meth"() + ."$meth"()
         })
     ;
-    say %pars;
     self.new: |%pars
 }
 

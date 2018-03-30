@@ -3,6 +3,7 @@ use CircuitBreaker::Executor;
 use CircuitBreaker::Config;
 use CircuitBreaker::Data;
 use CircuitBreaker::Metric;
+use CircuitBreaker::Status;
 use X::CircuitBreaker::TooManyRequests;
 
 my %cache{Capture};
@@ -29,6 +30,11 @@ method compose(&!exec) {
             whenever $!bleed {
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1rejections;
                 .response.break: X::CircuitBreaker::TooManyRequests.new
+            }
+
+            whenever $!config.metrics {
+                next unless .defined and .failures > $!config.failures;
+                $!config.status = Opened
             }
         }
     }, :$!scheduler;
