@@ -79,6 +79,7 @@ subtest {
     } {
         state $num //= 0;
         ++$num;
+        say $num;
         die "Bye" if $die;
         $num
     }
@@ -95,30 +96,24 @@ subtest {
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         throws-like {await cb3}, X::AdHoc, "It should die";
         is &cb3.config.status.key, "Opened", "Circuit is opened again";
-        $*SCHEDULER.advance-by(5);
+        $*SCHEDULER.advance-by(1);
+            sleep 5;
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
-        is await(cb3 False), 11, "Tried";
-        is &cb3.config.status.key, "Closed", "Circuit is opened again";
+        is await(cb3 False), 13, "Tried";
+        is &cb3.config.status.key, "Closed", "Circuit is closed again";
     }, "Test halfopen";
 }
 
-my &cb4 := CircuitBreaker.new:
-    :exec{start start start start start {42}}
+sub cb4 is circuit-breaker {start start start start start {42}}
 ;
 
 is await(cb4), 42, "Accept promise inside a promise inside ...";
 
-my &cb5 := CircuitBreaker.new:
-    :default{13 + 29},
-    :exec{die "Bye"}
-;
+sub cb5 is circuit-breaker{:default{13 + 29}} {die "Bye"}
 
 is await(cb5), 42, "Accept default as code";
 
-my &cb6 := CircuitBreaker.new:
-    :default{start {13 + 29}},
-    :exec{die "Bye"}
-;
+sub cb6 is circuit-breaker{ :default{start {13 + 29}} } {die "Bye"}
 
 is await(cb6), 42, "Accept default as code returning promise";
 

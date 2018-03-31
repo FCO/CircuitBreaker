@@ -34,9 +34,9 @@ method start {
                     :timeout($!config.timeout),
                     $data.capture,
                 ;
+                $!config.status = Closed;
                 resp.keep: $r;
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
-                $!config.status = Closed;
             }
             CATCH {
                 when X::CircuitBreaker::ShortCircuited {

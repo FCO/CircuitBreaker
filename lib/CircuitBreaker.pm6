@@ -112,4 +112,12 @@ multi trait_mod:<is>(Routine $r, :%circuit-breaker!) is export {
     $r
 }
 
+multi trait_mod:<is>(Block $r, :%circuit-breaker!) is export {
+    trait_mod:<is>(sub (|c) {$r.(|c)}, :%circuit-breaker);
+}
+
+multi trait_mod:<is>(Block $r, Bool :$circuit-breaker!) is export {
+    trait_mod:<is>(sub (|c) {$r.(|c)}, :circuit-breaker);
+}
+
 sub circuit-breaker(&sub, *%circuit-breaker) is export { trait_mod:<is>(&sub, :%circuit-breaker) }
