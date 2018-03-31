@@ -71,11 +71,13 @@ subtest {
 }, "Should change status with default response";
 
 {
-    my $*SCHEDULER = Test::Scheduler.new;
+    BEGIN my $scheduler = Test::Scheduler.new;
+    say $scheduler;
     sub cb3($die = True) is circuit-breaker{
         :2retries,
         :3failures,
         :1000reset-time,
+        :$scheduler,
     } {
         state $num //= 0;
         ++$num;
@@ -92,12 +94,11 @@ subtest {
         }
         is &cb3.config.status.key, "Opened", "Circuit is opened";
         throws-like {await cb3}, X::CircuitBreaker::ShortCircuited, "It should die";
-        $*SCHEDULER.advance-by(1);
+        $*scheduler.advance-by(1);
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         throws-like {await cb3}, X::AdHoc, "It should die";
         is &cb3.config.status.key, "Opened", "Circuit is opened again";
-        $*SCHEDULER.advance-by(1);
-            sleep 1;
+        $*scheduler.advance-by(1);
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         is await(cb3 False), 13, "Tried";
         is &cb3.config.status.key, "Closed", "Circuit is closed again";

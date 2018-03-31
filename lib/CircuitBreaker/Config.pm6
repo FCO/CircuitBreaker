@@ -31,7 +31,7 @@ method TWEAK(|) {
 method open-circuit {
     # TODO: use $!scheduler
     $!status = Opened;
-    Promise.in($!reset-time / 1000).then: {
+    Promise.in(:$!scheduler, $!reset-time / 1000).then: {
         say "chanage status!!!";
         $!status = HalfOpened
     }
