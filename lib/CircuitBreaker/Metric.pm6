@@ -14,6 +14,8 @@ has UInt    $.fallback-missings     = 0;
 
 has Instant $.instant           = now;
 
+multi infix:<+>(::?CLASS $a, ::?CLASS $b) is export { $a.add: $b }
+
 multi method add(::?CLASS:D: ::?CLASS:D $_) {
     my %pars = self.^attributes
         .grep({ .type ~~ UInt })

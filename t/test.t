@@ -76,24 +76,29 @@ subtest {
         :2retries,
         :3failures,
         :1000reset-time,
-    } {state $num //= 0; ++$num; die "Bye" if $die; $num}
+    } {
+        state $num //= 0;
+        ++$num;
+        die "Bye" if $die;
+        $num
+    }
 
     subtest {
         for ^3 {
-            is &cb3.status.key, "Closed", "Circuit is still closed";
-            throws-like {await cb3 True}, X::AdHoc, "It should die";
-            is &cb3.failed, $_ + 1, "Its counting the failures";
+            is &cb3.config.status.key, "Closed", "Circuit is still closed";
+            throws-like {await cb3}, X::AdHoc, "It should die";
+            #is &cb3.failed, $_ + 1, "Its counting the failures";
         }
-        is &cb3.status.key, "Opened", "Circuit is opened";
+        is &cb3.config.status.key, "Opened", "Circuit is opened";
         throws-like {await cb3}, X::CircuitBreaker::ShortCircuited, "It should die";
         $*SCHEDULER.advance-by(1);
-        is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
+        is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         throws-like {await cb3}, X::AdHoc, "It should die";
-        is &cb3.status.key, "Opened", "Circuit is opened again";
-        $*SCHEDULER.advance-by(1);
-        is &cb3.status.key, "HalfOpened", "Circuit is halfopened";
+        is &cb3.config.status.key, "Opened", "Circuit is opened again";
+        $*SCHEDULER.advance-by(5);
+        is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         is await(cb3 False), 11, "Tried";
-        is &cb3.status.key, "Closed", "Circuit is opened again";
+        is &cb3.config.status.key, "Closed", "Circuit is opened again";
     }, "Test halfopen";
 }
 

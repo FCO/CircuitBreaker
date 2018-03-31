@@ -1,5 +1,6 @@
 unit class CircuitBreaker::Executor;
 use X::CircuitBreaker::ShortCircuited;
+use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Execution;
 use CircuitBreaker::Status;
 use CircuitBreaker::Config;
@@ -21,8 +22,10 @@ method start {
             done
         }
         whenever $!channel -> $data {
+            my \resp = $data.response;
+            say "STATUS: {$!config.status}";
             if $!config.status ~~ Opened {
-                $data.response.break: X::CircuitBreaker::ShortCircuited.new;
+                X::CircuitBreaker::ShortCircuited.new.throw
             } else {
                 my $retries = $!config.retries;
                 my $r = $!execution.execute:
@@ -31,16 +34,33 @@ method start {
                     :timeout($!config.timeout),
                     $data.capture,
                 ;
-                $data.response.keep: $r;
+                resp.keep: $r;
                 $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1successes;
-                CATCH {
-                    default {
-                        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
-                        $data.response.break: $_
-                    }
+                $!config.status = Closed;
+            }
+            CATCH {
+                when X::CircuitBreaker::ShortCircuited {
+                    $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1short-circuits;
+                    self!error(resp, $_)
+                }
+                default {
+                    say "AQUI";
+                    $!config.open-circuit if $!config.status ~~ HalfOpened;
+                    say $!config.status;
+                    $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
+                    self!error(resp, $_)
                 }
             }
         }
+    }
+}
+
+method !error(\resp, $_) {
+    my \def = $!config.default;
+    if def ~~ CircuitBreaker::DefaultNotSet {
+        resp.break: $_
+    } else {
+        resp.keep: def
     }
 }
 

@@ -33,8 +33,8 @@ method compose(&!exec) {
             }
 
             whenever $!config.metrics {
-                next unless .defined and .failures > $!config.failures;
-                $!config.status = Opened
+                next unless .defined and .failures >= $!config.failures;
+                $!config.open-circuit unless $!config.status ~~ HalfOpened;
             }
         }
     }, :$!scheduler;
@@ -98,13 +98,12 @@ multi trait_mod:<is>(Routine $r, Bool :$circuit-breaker!) is export {
     my &clone = $r.clone;
     $r does CircuitBreaker;
     $r.compose: &clone;
+    start $r.config.metric-emiter.emit: CircuitBreaker::Metric.new for ^20;
     $r
 }
 
 multi trait_mod:<is>(Routine $r, :%circuit-breaker!) is export {
-    my &clone = $r.clone;
-    $r does CircuitBreaker;
-    $r.compose: &clone;
+    trait_mod:<is>($r, :circuit-breaker);
     for %circuit-breaker.kv -> $key, $value {
         given $r.config {
             ."$key"() = $value

@@ -21,13 +21,19 @@ has Supply      $.metrics;
 has Scheduler   $.scheduler               = $*SCHEDULER;
 
 method TWEAK(|) {
-    $!metrics = Supply.merge(
-        $!metric-emiter.Supply,
-        Supply.interval(1).map({ CircuitBreaker::Metric }),
-        :$!scheduler,
-    )
-    .produce: -> $agg, $metric {
-        $agg.add: $metric
+    $!metrics = $!metric-emiter.Supply
+    .rotor(10 => -9)
+    .map: -> @metrics {
+        [+] @metrics
+    }
+}
+
+method open-circuit {
+    # TODO: use $!scheduler
+    $!status = Opened;
+    Promise.in($!reset-time / 1000).then: {
+        say "chanage status!!!";
+        $!status = HalfOpened
     }
 }
 
