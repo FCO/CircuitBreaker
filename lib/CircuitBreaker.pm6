@@ -99,6 +99,7 @@ multi trait_mod:<is>(Routine $r, Bool :$circuit-breaker!) is export {
     $r does CircuitBreaker;
     $r.compose: &clone;
     start $r.config.metric-emiter.emit: CircuitBreaker::Metric.new for ^20;
+    $r.^attributes.first({ .name ~~ '$!name' }).set_value($r, &clone.name);
     $r
 }
 

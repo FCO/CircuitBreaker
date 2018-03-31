@@ -94,11 +94,11 @@ subtest {
         }
         is &cb3.config.status.key, "Opened", "Circuit is opened";
         throws-like {await cb3}, X::CircuitBreaker::ShortCircuited, "It should die";
-        $*scheduler.advance-by(1);
+        $scheduler.advance-by(1);
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         throws-like {await cb3}, X::AdHoc, "It should die";
         is &cb3.config.status.key, "Opened", "Circuit is opened again";
-        $*scheduler.advance-by(1);
+        $scheduler.advance-by(1);
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         is await(cb3 False), 13, "Tried";
         is &cb3.config.status.key, "Closed", "Circuit is closed again";
