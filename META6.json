@@ -14,21 +14,18 @@
     "fernando"
   ],
   "provides": {
-    "CircuitBreaker"                                : "lib/CircuitBreaker.pm6",
-    "CircuitBreaker::Mock::Response"                : "lib/CircuitBreaker/Mock/Response.pm6",
-    "CircuitBreaker::Mock::Route"                   : "lib/CircuitBreaker/Mock/Route.pm6",
-    "CircuitBreaker::Mock::Router"                  : "lib/CircuitBreaker/Mock/Router.pm6",
-    "CircuitBreaker::Role"                          : "lib/CircuitBreaker/Role.pm6",
-    "CircuitBreaker::DefaultNotSet"                 : "lib/CircuitBreaker/DefaultNotSet.pm6",
-    "CircuitBreaker::Status"                        : "lib/CircuitBreaker/Status.pm6",
-    "CircuitBreaker::Mock"                          : "lib/CircuitBreaker/Mock.pm6",
-    "CircuitBreaker::Utils"                         : "lib/CircuitBreaker/Utils.pm6",
-    "CircuitBreaker::Executor"                      : "lib/CircuitBreaker/Executor.pm6",
-    "X::CircuitBreakerMock::ShouldNeverBeCalled"    : "lib/X/CircuitBreakerMock/ShouldNeverBeCalled.pm6",
-    "X::CircuitBreaker"                             : "lib/X/CircuitBreaker.pm6",
-    "X::CircuitBreaker::Timeout"                    : "lib/X/CircuitBreaker/Timeout.pm6",
-    "X::CircuitBreaker::ShortCircuited.pm6"         : "lib/X/CircuitBreaker/ShortCircuited.pm6",
-    "X::CircuitBreaker::NoMoreRetries"              : "lib/X/CircuitBreaker/NoMoreRetries.pm6"
+    "CircuitBreaker"                    : "lib/CircuitBreaker.pm6",
+    "CircuitBreaker::Metric"            : "lib/CircuitBreaker/Metric.pm6",
+    "CircuitBreaker::Execution"         : "lib/CircuitBreaker/Execution.pm6",
+    "CircuitBreaker::Config"            : "lib/CircuitBreaker/Config.pm6",
+    "CircuitBreaker::DefaultNotSet"     : "lib/CircuitBreaker/DefaultNotSet.pm6",
+    "CircuitBreaker::Status"            : "lib/CircuitBreaker/Status.pm6",
+    "CircuitBreaker::Data"              : "lib/CircuitBreaker/Data.pm6",
+    "CircuitBreaker::Executor"          : "lib/CircuitBreaker/Executor.pm6",
+    "X::CircuitBreaker"                 : "lib/X/CircuitBreaker.pm6",
+    "X::CircuitBreaker::Timeout"        : "lib/X/CircuitBreaker/Timeout.pm6",
+    "X::CircuitBreaker::TooManyRequests": "lib/X/CircuitBreaker/TooManyRequests.pm6",
+    "X::CircuitBreaker::ShortCircuited" : "lib/X/CircuitBreaker/ShortCircuited.pm6"
   },
   "description": ""
 }
