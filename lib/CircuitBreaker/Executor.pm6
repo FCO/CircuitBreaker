@@ -60,7 +60,11 @@ method !error(\resp, $_) {
     if def ~~ CircuitBreaker::DefaultNotSet {
         resp.break: $_
     } else {
-        resp.keep: def
+        if def ~~ Callable {
+            resp.keep: def.()
+        } else {
+            resp.keep: def
+        }
     }
 }
 

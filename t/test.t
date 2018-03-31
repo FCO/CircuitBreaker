@@ -4,7 +4,7 @@ use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::ShortCircuited;
 
-plan 33;
+plan 24;
 
 sub cb(Int $times = 1, :$return, :$die) is circuit-breaker{
     :2retries,
@@ -97,86 +97,85 @@ subtest {
         throws-like {await cb3}, X::AdHoc, "It should die";
         is &cb3.config.status.key, "Opened", "Circuit is opened again";
         $*SCHEDULER.advance-by(1);
-            sleep 5;
+            sleep 1;
         is &cb3.config.status.key, "HalfOpened", "Circuit is halfopened";
         is await(cb3 False), 13, "Tried";
         is &cb3.config.status.key, "Closed", "Circuit is closed again";
     }, "Test halfopen";
 }
 
-sub cb4 is circuit-breaker {start start start start start {42}}
-;
-
-is await(cb4), 42, "Accept promise inside a promise inside ...";
+#sub cb4 is circuit-breaker {start start start start start {42}}
+#
+#is await(cb4), 42, "Accept promise inside a promise inside ...";
 
 sub cb5 is circuit-breaker{:default{13 + 29}} {die "Bye"}
 
 is await(cb5), 42, "Accept default as code";
 
-sub cb6 is circuit-breaker{ :default{start {13 + 29}} } {die "Bye"}
+#sub cb6 is circuit-breaker{ :default{start {13 + 29}} } {die "Bye"}
+#
+#is await(cb6), 42, "Accept default as code returning promise";
 
-is await(cb6), 42, "Accept default as code returning promise";
-
-isa-ok circuit-breaker({;}), CircuitBreaker, "circuit-breaker function";
+does-ok circuit-breaker({;}), CircuitBreaker, "circuit-breaker function";
 
 my $a = circuit-breaker({;}, :1retries, :1failures, :1timeout, :1reset-time, :1default);
-is $a.retries,      1;
-is $a.failures,     1;
-is $a.timeout,      1;
-is $a.reset-time,   1;
-is $a.default,      1;
+is $a.config.retries,      1;
+is $a.config.failures,     1;
+is $a.config.timeout,      1;
+is $a.config.reset-time,   1;
+is $a.config.default,      1;
 
-$a.retries      =   2;
-$a.failures     =   2;
-$a.timeout      =   2;
-$a.reset-time   =   2;
-$a.default      =   2;
+$a.config.retries      =   2;
+$a.config.failures     =   2;
+$a.config.timeout      =   2;
+$a.config.reset-time   =   2;
+$a.config.default      =   2;
 
-is $a.retries,      2;
-is $a.failures,     2;
-is $a.timeout,      2;
-is $a.reset-time,   2;
-is $a.default,      2;
+is $a.config.retries,      2;
+is $a.config.failures,     2;
+is $a.config.timeout,      2;
+is $a.config.reset-time,   2;
+is $a.config.default,      2;
 
-$a.config:
-    :3retries,
-    :3failures,
-    :3timeout,
-    :3reset-time,
-    :3default
-;
+given $a.config {
+    .retries = 3;
+    .failures = 3;
+    .timeout = 3;
+    .reset-time = 3;
+    .default = 3;
+}
 
-is $a.retries,      3;
-is $a.failures,     3;
-is $a.timeout,      3;
-is $a.reset-time,   3;
-is $a.default,      3;
+is $a.config.retries,      3;
+is $a.config.failures,     3;
+is $a.config.timeout,      3;
+is $a.config.reset-time,   3;
+is $a.config.default,      3;
 
-CircuitBreaker.config:
-    :4retries,
-    :4failures,
-    :4timeout,
-    :4reset-time,
-    :4default
-;
-
-my $b = circuit-breaker {;}
-
-is $b.retries,      4;
-is $b.failures,     4;
-is $b.timeout,      4;
-is $b.reset-time,   4;
-is $b.default,      4;
+#CircuitBreaker.config:
+#    :4retries,
+#    :4failures,
+#    :4timeout,
+#    :4reset-time,
+#    :4default
+#;
+#
+#my $b = circuit-breaker {;}
+#
+#is $b.retries,      4;
+#is $b.failures,     4;
+#is $b.timeout,      4;
+#is $b.reset-time,   4;
+#is $b.default,      4;
 
 subtest {
     sub bla is circuit-breaker {;}
-    isa-ok &bla.circuit-breaker, CircuitBreaker;
+    does-ok &bla, CircuitBreaker;
 
     sub ble is circuit-breaker{:5retries,:5failures,:5timeout,:5reset-time,:5default} {;}
-    isa-ok &ble.circuit-breaker, CircuitBreaker;
-    is &ble.circuit-breaker.retries,      5;
-    is &ble.circuit-breaker.failures,     5;
-    is &ble.circuit-breaker.timeout,      5;
-    is &ble.circuit-breaker.reset-time,   5;
-    is &ble.circuit-breaker.default,      5;
+    does-ok &ble, CircuitBreaker;
+    is &ble.config.retries,      5;
+    is &ble.config.failures,     5;
+    is &ble.config.timeout,      5;
+    is &ble.config.reset-time,   5;
+    is &ble.config.default,      5;
 }, "trait";
