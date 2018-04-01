@@ -24,6 +24,11 @@ has CircuitBreaker::Config      $.config   .= new:
     :$!scheduler
 ;
 
+method mock-stack is raw {
+    use CircuitBreaker::MockStack;
+    CircuitBreaker::MockStack.new
+}
+
 method compose(&!exec) {
     Promise.start: {
         react {
@@ -87,7 +92,11 @@ method fix-threads(UInt $threads) {
     }
 }
 
-method CALL-ME(|c) {
+multi method CALL-ME(|c where {DYNAMIC::<%*CircuitBreaker>:exists and %*CircuitBreaker{&.name}:exists}) {
+    start %*CircuitBreaker{&.name}.(self, c)
+}
+
+multi method CALL-ME(|c) {
     my Promise $p .= new;
     $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1emit;
     $!supplier.emit: CircuitBreaker::Data.new: :capture(c), :response($p.vow);

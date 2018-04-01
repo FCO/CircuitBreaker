@@ -23,7 +23,6 @@ method start {
         }
         whenever $!channel -> $data {
             my \resp = $data.response;
-            say "STATUS: {$!config.status}";
             if $!config.status ~~ Opened {
                 X::CircuitBreaker::ShortCircuited.new.throw
             } else {
@@ -44,9 +43,7 @@ method start {
                     self!error(resp, $_)
                 }
                 default {
-                    say "AQUI";
                     $!config.open-circuit if $!config.status ~~ HalfOpened;
-                    say $!config.status;
                     $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1failures;
                     self!error(resp, $_)
                 }

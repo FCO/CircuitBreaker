@@ -72,7 +72,6 @@ subtest {
 
 {
     BEGIN my $scheduler = Test::Scheduler.new;
-    say $scheduler;
     sub cb3($die = True) is circuit-breaker{
         :2retries,
         :3failures,
@@ -81,7 +80,6 @@ subtest {
     } {
         state $num //= 0;
         ++$num;
-        say $num;
         die "Bye" if $die;
         $num
     }
