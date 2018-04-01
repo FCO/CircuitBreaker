@@ -6,5 +6,5 @@ install:
   - zef install Test::Scheduler --/test
   - zef install --deps-only .
 script:
-  - zef test .
+  - zef test . --verbose
 sudo: false
