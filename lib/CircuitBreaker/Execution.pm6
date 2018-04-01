@@ -8,7 +8,7 @@ method execute(Capture \c, :$retries = 0, :$timeout = 1000, Scheduler :$schedule
     my $prom = Promise.start: { self!run(c, :$retries) }, :$scheduler;
     react {
         whenever Promise.in: $timeout / 1000 {
-            X::CircuitBreaker::Timeout.new($timeout).throw;
+            X::CircuitBreaker::Timeout.new(:$timeout).throw;
             done
         }
 
