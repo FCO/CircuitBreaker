@@ -19,3 +19,4 @@ is await(cbreaker "bla"), 42, "It should return 42";
 is await(cbreaker "bla"), 42, "again";
 dies-ok { await cbreaker "my name" }, "It should timeout";
 
+done-testing
