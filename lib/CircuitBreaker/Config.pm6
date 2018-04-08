@@ -2,6 +2,7 @@ unit class CircuitBreaker::Config;
 use CircuitBreaker::DefaultNotSet;
 use CircuitBreaker::Status;
 use CircuitBreaker::Metric;
+use SupplyTimeWindow;
 
 my %cache;
 
@@ -12,7 +13,7 @@ has UInt        $.timeout           is rw = 1000;
 has UInt        $.reset-time        is rw = 10000;
 has             $.default           is rw = CircuitBreaker::DefaultNotSet;
 has UInt        $.reqps             is rw = 100;
-has UInt        $.threads           is rw = 1;
+has UInt        $.threads           is rw = 4;
 has             $.circuit-breaker   is required;
 has Supplier    $.control                .= new;
 has Supply      $.bleed             is required;
@@ -21,11 +22,7 @@ has Supply      $.metrics;
 has Scheduler   $.scheduler               = $*SCHEDULER;
 
 method TWEAK(|) {
-    $!metrics = $!metric-emiter.Supply
-    .rotor(10 => -9)
-    .map: -> @metrics {
-        [+] @metrics
-    }
+    $!metrics = $!metric-emiter.Supply.time-window(10).map: { .reduce: { $^a + $^b } }
 }
 
 method open-circuit {

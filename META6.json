@@ -1,34 +1,41 @@
 {
   "name": "CircuitBreaker",
   "perl": "v6.*",
+  "build-depends": [
+    "SupplyTimeWindow"
+  ],
   "scripts": {
     "test": "zef test ."
   },
+  "depends": [
+    "SupplyTimeWindow"
+  ],
   "license": "https://opensource.org/licenses/Artistic-2.0",
   "test-depends": [
-    "Test::Scheduler"
+    "Test::Scheduler",
+    "SupplyTimeWindow"
   ],
+  "provides": {
+    "CircuitBreaker::Status": "lib/CircuitBreaker/Status.pm6",
+    "CircuitBreaker": "lib/CircuitBreaker.pm6",
+    "CircuitBreaker::Data": "lib/CircuitBreaker/Data.pm6",
+    "CircuitBreaker::DefaultNotSet": "lib/CircuitBreaker/DefaultNotSet.pm6",
+    "CircuitBreaker::MockStack": "lib/CircuitBreaker/MockStack.pm6",
+    "X::CircuitBreaker::ShortCircuited": "lib/X/CircuitBreaker/ShortCircuited.pm6",
+    "CircuitBreaker::Mock": "lib/CircuitBreaker/Mock.pm6",
+    "X::CircuitBreaker": "lib/X/CircuitBreaker.pm6",
+    "CircuitBreaker::Config": "lib/CircuitBreaker/Config.pm6",
+    "CircuitBreaker::Metric": "lib/CircuitBreaker/Metric.pm6",
+    "X::CircuitBreaker::TooManyRequests": "lib/X/CircuitBreaker/TooManyRequests.pm6",
+    "CircuitBreaker::Execution": "lib/CircuitBreaker/Execution.pm6",
+    "CircuitBreaker::Executor": "lib/CircuitBreaker/Executor.pm6",
+    "X::CircuitBreaker::MockShouldNeverBeCalled": "lib/X/CircuitBreaker/MockShouldNeverBeCalled.pm6",
+    "X::CircuitBreaker::Timeout": "lib/X/CircuitBreaker/Timeout.pm6"
+  },
   "production": false,
   "version": "0.0.1",
   "authors": [
     "fernando"
   ],
-  "provides": {
-    "CircuitBreaker"                            : "lib/CircuitBreaker.pm6",
-    "CircuitBreaker::Config"                    : "lib/CircuitBreaker/Config.pm6",
-    "CircuitBreaker::Data"                      : "lib/CircuitBreaker/Data.pm6",
-    "CircuitBreaker::DefaultNotSet"             : "lib/CircuitBreaker/DefaultNotSet.pm6",
-    "CircuitBreaker::Execution"                 : "lib/CircuitBreaker/Execution.pm6",
-    "CircuitBreaker::Executor"                  : "lib/CircuitBreaker/Executor.pm6",
-    "CircuitBreaker::Metric"                    : "lib/CircuitBreaker/Metric.pm6",
-    "CircuitBreaker::Mock"                      : "lib/CircuitBreaker/Mock.pm6",
-    "CircuitBreaker::MockStack"                 : "lib/CircuitBreaker/MockStack.pm6",
-    "CircuitBreaker::Status"                    : "lib/CircuitBreaker/Status.pm6",
-    "X::CircuitBreaker"                         : "lib/X/CircuitBreaker.pm6",
-    "X::CircuitBreaker::MockShouldNeverBeCalled":"lib/X/CircuitBreaker/MockShouldNeverBeCalled.pm6",
-    "X::CircuitBreaker::ShortCircuited"         : "lib/X/CircuitBreaker/ShortCircuited.pm6",
-    "X::CircuitBreaker::Timeout"                : "lib/X/CircuitBreaker/Timeout.pm6",
-    "X::CircuitBreaker::TooManyRequests"        : "lib/X/CircuitBreaker/TooManyRequests.pm6"
-  },
   "description": ""
 }

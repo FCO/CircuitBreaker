@@ -12,7 +12,7 @@ has Promise                     $.finished     .= new;
 has                             $!vow           = $!finished.vow;
 has CircuitBreaker::Execution   $!execution;
 
-method TWEAK(:&exec, |) {
+method TWEAK(:&exec!, |) {
     $!execution .= new: :&exec
 }
 
@@ -57,6 +57,7 @@ method !error(\resp, $_) {
     if def ~~ CircuitBreaker::DefaultNotSet {
         resp.break: $_
     } else {
+        $!config.metric-emiter.emit: CircuitBreaker::Metric.new: :1fallback-failures;
         if def ~~ Callable {
             resp.keep: def.()
         } else {
