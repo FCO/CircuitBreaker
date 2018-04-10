@@ -1,9 +1,13 @@
 use X::CircuitBreaker::Timeout;
 use v6.d.PREVIEW;
+
+multi multi-await(Awaitable $p)             { multi-await await $p }
+multi multi-await($p where * !~~ Awaitable) { $p }
+
 role CircuitBreaker::InternalExecutor[&clone] {
     has $!retries = 2;
     method CALL-ME(|c) {
-        start self!RUN-ME(c)
+        start multi-await self!RUN-ME(c)
     }
 
     method !RUN-ME(Capture \c) {

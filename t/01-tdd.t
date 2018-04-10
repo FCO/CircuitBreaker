@@ -57,4 +57,12 @@ $tries = 0;
 throws-like { await(retry2 3) }, X::AdHoc, :message(/"big fat error"/);
 is $tries, 3;
 
+sub bli($i = 0) { start 42 + $i }
+my &blo := &bli but CircuitBreaker;
+does-ok &blo, CircuitBreaker;
+isa-ok blo(), Promise;
+is await(blo), await bli;
+is await(blo 13), await bli 13;
+
+
 done-testing
