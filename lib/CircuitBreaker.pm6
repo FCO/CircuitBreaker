@@ -1,12 +1,23 @@
 use X::CircuitBreaker::Timeout;
+use CircuitBreaker::Metric;
+use SupplyTimeWindow;
 use v6.d.PREVIEW;
 
 multi multi-await(Awaitable $p)             { multi-await await $p }
 multi multi-await($p where * !~~ Awaitable) { $p }
 
 role CircuitBreaker::InternalExecutor[&clone] {
-    has $!retries = 2;
+    has UInt        $!retries   = 2;
+    has Supplier    $!supplier .= new;
+    has Supply      $.metrics   = $!supplier
+        .Supply
+        .time-window(10)
+        .map: {
+            .reduce: { $^a + $^b }
+        };
+
     method CALL-ME(|c) {
+        $!supplier.emit: CircuitBreaker::Metric.new: :1emit;
         start multi-await self!RUN-ME(c)
     }
 

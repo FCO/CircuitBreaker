@@ -70,4 +70,22 @@ isa-ok blu(), Promise;
 is await(blu), 42;
 is await(blu 13), 55;
 
+sub with-metrics() is circuit-breaker { 42 }
+my $metrics = &with-metrics.metrics;
+
+start {
+    sleep 1;
+    { with-metrics; sleep 1 } for ^15;
+}
+
+subtest {
+    plan 15;
+    react whenever $metrics {
+        state $i = 0;
+        my $c = ++$i < 10 ?? $i !! 10;
+        is .emit, $c, "{ $c } emits on second { $i }";
+        done if $i >= 15
+    }
+}
+
 done-testing
