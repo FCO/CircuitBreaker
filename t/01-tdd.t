@@ -64,5 +64,10 @@ isa-ok blo(), Promise;
 is await(blo), await bli;
 is await(blo 13), await bli 13;
 
+sub blu($i = 0) is circuit-breaker { 42 + $i }
+does-ok &blu, CircuitBreaker;
+isa-ok blu(), Promise;
+is await(blu), 42;
+is await(blu 13), 55;
 
 done-testing
