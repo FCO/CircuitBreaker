@@ -17,7 +17,7 @@ role CircuitBreaker::InternalExecutor[&clone] {
         };
 
     method CALL-ME(|c) {
-        $!supplier.emit: CircuitBreaker::Metric.new: :1emit;
+        LEAVE $!supplier.emit: CircuitBreaker::Metric.new: :1emit;
         start multi-await self!RUN-ME(c)
     }
 
@@ -25,9 +25,12 @@ role CircuitBreaker::InternalExecutor[&clone] {
         my $prom = Promise.start({ &clone(|c) })
             .then: sub ($_) {
                 return .result;
+                KEEP $!supplier.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
                     default {
+                        UNDO $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
                         for ^$!retries {
+                            $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
                             CATCH { default { next } }
                             return &clone(|c)
                         }

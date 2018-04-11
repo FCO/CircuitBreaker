@@ -82,8 +82,10 @@ subtest {
     plan 15;
     react whenever $metrics {
         state $i = 0;
-        my $c = ++$i < 10 ?? $i !! 10;
-        is .emit, $c, "{ $c } emits on second { $i }";
+        $i++;
+        my $c = $i < 20 ?? Int($i/2) !! 10;
+        is .emit, $c + $i % 2, "{ $c } emits on { $i }th time";
+        is .successes, $c, "$c successes on { $i }th time" if $i %% 2;
         done if $i >= 15
     }
 }
