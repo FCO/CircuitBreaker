@@ -39,7 +39,7 @@ $started = now;
 $tries = 0;
 &retry.close;
 throws-like { await(retry .5) }, X::CircuitBreaker::Timeout, :timeout(1000), :message(/1000/);
-is $tries, 2;
+is $tries, 3;
 cmp-ok now - $started, "<", 1.5;
 
 sub error2($i) { die "big fat error" if $tries++ != $i; $i }
