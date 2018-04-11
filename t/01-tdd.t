@@ -79,7 +79,7 @@ start {
 }
 
 subtest {
-    plan 15;
+    plan 22;
     react whenever $metrics {
         state $i = 0;
         $i++;
