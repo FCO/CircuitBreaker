@@ -2,6 +2,7 @@ use Test;
 
 use CircuitBreaker;
 use X::CircuitBreaker::Timeout;
+use X::CircuitBreaker::ShortCircuited;
 
 sub bla($i = 0) { 42 + $i }
 my &ble := &bla but CircuitBreaker;
@@ -27,15 +28,18 @@ isa-ok my $p = retry(), Promise;
 try await $p;
 is $tries, 3;
 $tries = 0;
+&retry.close;
 throws-like { await(retry) }, X::AdHoc, :message(/"big fat error"/);
 is $tries, 3;
 $started = now;
+&retry.close;
 throws-like { await(retry 13) }, X::CircuitBreaker::Timeout, :timeout(1000), :message(/1000/);
 cmp-ok now - $started, "<", 2;
 $started = now;
 $tries = 0;
+&retry.close;
 throws-like { await(retry .5) }, X::CircuitBreaker::Timeout, :timeout(1000), :message(/1000/);
-is $tries, 3;
+is $tries, 2;
 cmp-ok now - $started, "<", 1.5;
 
 sub error2($i) { die "big fat error" if $tries++ != $i; $i }
@@ -45,15 +49,19 @@ $tries = 0;
 isa-ok $p = retry2(0), Promise;
 await $p;
 $tries = 0;
+&retry2.close;
 is await(retry2 0), 0;
 is $tries, 1;
 $tries = 0;
+&retry2.close;
 is await(retry2 1), 1;
 is $tries, 2;
 $tries = 0;
+&retry2.close;
 is await(retry2 2), 2;
 is $tries, 3;
 $tries = 0;
+&retry2.close;
 throws-like { await(retry2 3) }, X::AdHoc, :message(/"big fat error"/);
 is $tries, 3;
 
@@ -89,5 +97,9 @@ subtest {
         done if $i >= 15
     }
 }
+
+sub error-only(*@errors) is circuit-breaker { die |@errors }
+try await error-only "bla";
+throws-like { await(error-only) }, X::CircuitBreaker::ShortCircuited;
 
 done-testing

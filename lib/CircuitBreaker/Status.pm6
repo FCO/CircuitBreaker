@@ -1,1 +1,1 @@
-enum Status <Closed Opened HalfOpened>;
+enum CircuitBreaker::Status <Closed Opened HalfOpened>;

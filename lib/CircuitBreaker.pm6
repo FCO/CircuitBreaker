@@ -1,5 +1,7 @@
+use X::CircuitBreaker::ShortCircuited;
 use X::CircuitBreaker::Timeout;
 use CircuitBreaker::Metric;
+use CircuitBreaker::Status;
 use SupplyTimeWindow;
 use v6.d.PREVIEW;
 
@@ -7,16 +9,44 @@ multi multi-await(Awaitable $p)             { multi-await await $p }
 multi multi-await($p where * !~~ Awaitable) { $p }
 
 role CircuitBreaker::InternalExecutor[&clone] {
-    has UInt        $!retries   = 2;
-    has Supplier    $!supplier .= new;
-    has Supply      $.metrics   = $!supplier
+    has UInt                    $!retries   = 2;
+    has CircuitBreaker::Status  $!status    = Closed;
+    has Lock::Async             $!lst      .= new;
+    has Supplier                $!supplier .= new;
+    has Rat                     $.fail      = .1;
+    has Supply                  $.metrics   = $!supplier
         .Supply
         .time-window(10)
         .map: {
             .reduce: { $^a + $^b }
-        };
+        }
+    ;
+
+    method TWEAK (|) {
+        start react whenever $!metrics {
+            #say "{ .failures } / { .emit } => {(.failures / .emit) * 100}%";
+            if .failures / .emit > $!fail {
+                $!lst.protect: {
+                    $!status = Opened
+                }
+            }
+        }
+    }
+
+    method close {
+        $!lst.protect: {
+            $!status = Closed
+        }
+    }
+
+    method status {
+        $!lst.protect: {
+            $!status
+        }
+    }
 
     method CALL-ME(|c) {
+        X::CircuitBreaker::ShortCircuited.new.throw if $.status ~~ Opened;
         LEAVE $!supplier.emit: CircuitBreaker::Metric.new: :1emit;
         start multi-await self!RUN-ME(c)
     }
@@ -28,12 +58,12 @@ role CircuitBreaker::InternalExecutor[&clone] {
                 KEEP $!supplier.emit: CircuitBreaker::Metric.new: :1successes;
                 CATCH {
                     default {
-                        UNDO $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
                         for ^$!retries {
                             $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
                             CATCH { default { next } }
                             return &clone(|c)
                         }
+                        $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
                         $!.rethrow
                     }
                 }
