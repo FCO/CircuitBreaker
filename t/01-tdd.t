@@ -38,7 +38,7 @@ cmp-ok now - $started, "<", 2;
 $started = now;
 $tries = 0;
 &retry.close;
-throws-like { await(retry .5) }, X::CircuitBreaker::Timeout, :timeout(1000), :message(/1000/);
+throws-like { await(retry .4) }, X::CircuitBreaker::Timeout, :timeout(1000), :message(/1000/);
 is $tries, 3;
 cmp-ok now - $started, "<", 1.5;
 
