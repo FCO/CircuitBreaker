@@ -8,7 +8,8 @@ use v6.d.PREVIEW;
 multi multi-await(Awaitable $p)             { multi-await await $p }
 multi multi-await($p where * !~~ Awaitable) { $p }
 
-role CircuitBreaker::InternalExecutor[&clone] {
+role CircuitBreaker::InternalExecutor[&cloned] {
+    has Numeric                 $!timeout   = 1;
     has UInt                    $!retries   = 2;
     has CircuitBreaker::Status  $!status    = Closed;
     has Lock::Async             $!lst      .= new;
@@ -52,42 +53,29 @@ role CircuitBreaker::InternalExecutor[&clone] {
     }
 
     method !RUN-ME(Capture \c) {
-        my $prom = Promise.start({ &clone(|c) })
-            .then: sub ($_) {
-                return .result;
-                KEEP $!supplier.emit: CircuitBreaker::Metric.new: :1successes;
-                CATCH {
-                    default {
-                        for ^$!retries {
-                            $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
-                            CATCH { default { next } }
-                            return &clone(|c)
-                        }
-                        $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
-                        $!.rethrow
-                    }
+        KEEP $!supplier.emit: CircuitBreaker::Metric.new: :1successes;
+        UNDO $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
+        my $prom = start { cloned(|c) };
+        $prom .= then: sub ($_) {
+            ENTER $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
+            CATCH {
+                default {
+                    return cloned(|c)
                 }
             }
-        ;
+            return .result;
+        } for ^$!retries;
         my $resp;
         {
             react {
-                whenever Promise.in: 1 {
-                    X::CircuitBreaker::Timeout.new(:1000timeout).throw;
+                whenever Promise.in: $!timeout {
+                    X::CircuitBreaker::Timeout.new(:$!timeout).throw;
                     done
                 }
 
                 whenever $prom -> $r {
                     $resp = $r;
                     done;
-                }
-            }
-            CATCH {
-                when X::CircuitBreaker::Timeout {
-                    .rethrow
-                }
-                default {
-                    .rethrow
                 }
             }
         }
