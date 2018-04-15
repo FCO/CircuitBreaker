@@ -29,6 +29,7 @@ sub error($i = .1) {
     await Promise.in: $i;
     die "big fat error"
 }
+
 my &retry := &error but CircuitBreaker;
 does-ok &retry, CircuitBreaker;
 start { {sleep .1; $*SCHEDULER.advance-by: .1 } for ^3 }
@@ -44,11 +45,13 @@ is $tries, 3;
 &retry.close;
 start { {sleep .1; $*SCHEDULER.advance-by: 1} for ^3 }
 throws-like { await(retry 13) }, X::CircuitBreaker::Timeout, :timeout(1), :message(/1/);
+
 $tries = 0;
 &retry.close;
-start { {sleep .1; $*SCHEDULER.advance-by: .1} for ^100 }
+my $p2 = start { {sleep .1; $*SCHEDULER.advance-by: .1} for ^100 }
 throws-like { await(retry .5) }, X::CircuitBreaker::Timeout, :timeout(1), :message(/1/);
 is $tries, 2;
+await $p2;
 
 sub error2($i) { die "big fat error" if $tries++ != $i; $i }
 my &retry2 := &error2 but CircuitBreaker;
