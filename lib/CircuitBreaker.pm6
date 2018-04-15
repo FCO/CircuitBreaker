@@ -57,9 +57,9 @@ role CircuitBreaker::InternalExecutor[&cloned] {
         UNDO $!supplier.emit: CircuitBreaker::Metric.new: :1failures;
         my $prom = start { cloned(|c) };
         $prom .= then: sub ($_) {
-            ENTER $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
             CATCH {
                 default {
+                    ENTER $!supplier.emit: CircuitBreaker::Metric.new: :1retries;
                     return cloned(|c)
                 }
             }
