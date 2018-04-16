@@ -120,5 +120,18 @@ throws-like { await(error-only) }, X::CircuitBreaker::ShortCircuited;
 $*SCHEDULER.advance-by: 1;
 
 is &error-only.status, HalfOpened, "Change status to HalfOpened after {&error-only.reset-time}s";
+try await error-only "bla";
+sleep .1;
+is &error-only.status, Opened;
+
+my $c = 0;
+proto multi-func($) is circuit-breaker { * }
+multi multi-func("die")     { $c++; die "died" }
+multi multi-func("live")    { 42 }
+multi multi-func("timeout") { sleep 42 }
+
+is await(multi-func "live"), 42;
+throws-like { await(multi-func "die") }, X::AdHoc, :message(/died/);
+throws-like { await(multi-func "timeout") }, X::CircuitBreaker::Timeout, :message(/1/);
 
 done-testing
