@@ -5,17 +5,22 @@ use CircuitBreaker::Status;
 use SupplyTimeWindow;
 use v6.d.PREVIEW;
 
+my &note = -> | {}
+
 multi multi-await(Awaitable $p)             { multi-await await $p }
 multi multi-await($p where * !~~ Awaitable) { $p }
 
 role CircuitBreaker::InternalExecutor[&cloned] {
-    has Numeric                 $!timeout   = 1;
-    has UInt                    $!retries   = 2;
-    has CircuitBreaker::Status  $!status    = Closed;
-    has Lock::Async             $!lst      .= new;
-    has Supplier                $!supplier .= new;
-    has Rat                     $.fail      = .1;
-    has Supply                  $.metrics   = $!supplier
+    has Numeric                 $.timeout           = 1;
+    has Numeric                 $.reset-time        = 1;
+    has UInt                    $.retries           = 2;
+    has UInt                    $.min-failures      = 1;
+    has CircuitBreaker::Status  $.status            = Closed;
+    has Lock::Async             $.lst              .= new;
+    has Supplier                $.supplier         .= new;
+    has Supplier                $.status-change    .= new;
+    has Rat                     $.fail              = .1;
+    has Supply                  $.metrics           = $!supplier
         .Supply
         .time-window(10)
         .map: {
@@ -24,11 +29,20 @@ role CircuitBreaker::InternalExecutor[&cloned] {
     ;
 
     method TWEAK (|) {
-        start react whenever $!metrics {
-            #say "{ .failures } / { .emit } => {(.failures / .emit) * 100}%";
-            if .failures / .emit > $!fail {
-                $!lst.protect: {
-                    $!status = Opened
+        start {
+            CATCH { default { .say } }
+            react {
+                whenever $!metrics.grep: { .failures >= $!min-failures and .failures / .emit > $!fail} {
+                    #note "{ .failures } / { .emit } => {(.failures / .emit) * 100}%";
+                    if $!status !~~ Opened {
+                        whenever Promise.in: $!reset-time {
+                            $!status-change.emit: HalfOpened
+                        }
+                        $!status-change.emit: Opened
+                    }
+                }
+                whenever $!status-change -> CircuitBreaker::Status $status {
+                    $!status = $status
                 }
             }
         }

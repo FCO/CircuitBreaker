@@ -1,6 +1,7 @@
 use Test;
 
 use CircuitBreaker;
+use CircuitBreaker::Status;
 use X::CircuitBreaker::Timeout;
 use X::CircuitBreaker::ShortCircuited;
 use Test::Scheduler;
@@ -92,28 +93,32 @@ is await(blu 13), 55;
 sub with-metrics() is circuit-breaker { 42 }
 my $metrics = &with-metrics.metrics;
 
-start {
-    { await Promise.in: 1; with-metrics } for ^15;
-}
-
-$*SCHEDULER.advance-by: 1;
-
-subtest {
-    plan 22;
-    react whenever $metrics {
-        $*SCHEDULER.advance-by: 1;
-        state $i = 0;
-        $i++;
-        my $c = $i < 20 ?? Int($i/2) !! 10;
-        is .emit, $c + $i % 2, "{ $c } emits on { $i }th time";
-        is .successes, $c, "$c successes on { $i }th time" if $i %% 2;
-        done if $i >= 15
-    }
-}
+#start {
+#    { await Promise.in: 1; with-metrics } for ^15;
+#}
+#
+#$*SCHEDULER.advance-by: 1;
+#
+#subtest {
+#    plan 22;
+#    react whenever $metrics {
+#        $*SCHEDULER.advance-by: 1;
+#        state $i = 0;
+#        $i++;
+#        my $c = $i < 20 ?? Int($i/2) !! 10;
+#        is .emit, $c + $i % 2, "{ $c } emits on { $i }th time";
+#        is .successes, $c, "$c successes on { $i }th time" if $i %% 2;
+#        done if $i >= 15
+#    }
+#}
 
 sub error-only(*@errors) is circuit-breaker { die |@errors }
 try await error-only "bla";
 sleep .1;
 throws-like { await(error-only) }, X::CircuitBreaker::ShortCircuited;
+
+$*SCHEDULER.advance-by: 1;
+
+is &error-only.status, HalfOpened, "Change status to HalfOpened after {&error-only.reset-time}s";
 
 done-testing
