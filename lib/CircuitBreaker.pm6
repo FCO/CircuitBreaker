@@ -4,8 +4,11 @@ use CircuitBreaker::Metric;
 use CircuitBreaker::Status;
 use SupplyTimeWindow;
 use v6.d.PREVIEW;
+use experimental :macros;
 
-my &note = -> | {}
+sub debug(|c) {
+    note "{callframe(2).file.IO.basename}:{callframe(2).line}: ", |c if $*CIRCUIT-BREAKER-DEBUG // %*ENV<CIRCUIT_BREAKER_DEBUG>
+}
 
 multi multi-await(Awaitable $p)             { multi-await await $p }
 multi multi-await($p where * !~~ Awaitable) { $p }
@@ -33,7 +36,7 @@ role CircuitBreaker::InternalExecutor[&cloned] {
             CATCH { default { .say } }
             react {
                 whenever $!metrics.grep: { .failures >= $!min-failures and .failures / .emit > $!fail} {
-                    #note "{ .failures } / { .emit } => {(.failures / .emit) * 100}%";
+                    debug "{ .failures } / { .emit } => {(.failures / .emit) * 100}%" if .emit;
                     if $!status !~~ Opened {
                         whenever Promise.in: $!reset-time {
                             $!status-change.emit: HalfOpened
@@ -42,6 +45,7 @@ role CircuitBreaker::InternalExecutor[&cloned] {
                     }
                 }
                 whenever $!status-change -> CircuitBreaker::Status $status {
+                    debug "$!status -> $status";
                     $!status = $status
                 }
             }
@@ -50,6 +54,7 @@ role CircuitBreaker::InternalExecutor[&cloned] {
 
     method close {
         $!lst.protect: {
+            debug "$!status -> Closed";
             $!status = Closed
         }
     }
@@ -63,6 +68,13 @@ role CircuitBreaker::InternalExecutor[&cloned] {
     method CALL-ME(|c) {
         X::CircuitBreaker::ShortCircuited.new.throw if $.status ~~ Opened;
         LEAVE $!supplier.emit: CircuitBreaker::Metric.new: :1emit;
+        KEEP {
+            if $.status ~~ HalfOpened {
+                self.close;
+                $!supplier.emit: CircuitBreaker::Metric
+            }
+
+        }
         start multi-await self!RUN-ME(c)
     }
 

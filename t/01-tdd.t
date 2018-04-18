@@ -112,26 +112,29 @@ my $metrics = &with-metrics.metrics;
 #    }
 #}
 
-sub error-only(*@errors) is circuit-breaker { die |@errors }
-try await error-only "bla";
+#&term:<now>.wrap: { $*SCHEDULER.virtual-time }
+
+proto multifunc($) is circuit-breaker { * }
+multi multifunc("die")     { die "died" }
+multi multifunc("live")    { 42 }
+multi multifunc("timeout") { sleep 42 }
+
+try await multifunc "die";
 sleep .1;
-throws-like { await(error-only) }, X::CircuitBreaker::ShortCircuited;
+throws-like { await(multifunc "die") }, X::CircuitBreaker::ShortCircuited;
 
 $*SCHEDULER.advance-by: 1;
 
-is &error-only.status, HalfOpened, "Change status to HalfOpened after {&error-only.reset-time}s";
-try await error-only "bla";
+is &multifunc.status, HalfOpened, "Change status to HalfOpened after {&multifunc.reset-time}s";
+try await multifunc "die";
 sleep .1;
-is &error-only.status, Opened;
+is &multifunc.status, Opened;
 
-my $c = 0;
-proto multi-func($) is circuit-breaker { * }
-multi multi-func("die")     { $c++; die "died" }
-multi multi-func("live")    { 42 }
-multi multi-func("timeout") { sleep 42 }
+$*SCHEDULER.advance-by: 10;
+is &multifunc.status, HalfOpened, "Change status to HalfOpened after {&multifunc.reset-time}s";
 
-is await(multi-func "live"), 42;
-throws-like { await(multi-func "die") }, X::AdHoc, :message(/died/);
-throws-like { await(multi-func "timeout") }, X::CircuitBreaker::Timeout, :message(/1/);
+try await multifunc "live";
+sleep .1;
+is &multifunc.status, Closed;
 
 done-testing
